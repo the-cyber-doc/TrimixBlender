@@ -1,0 +1,19 @@
+# Trimix Blender behind your TLS reverse proxy: http://127.0.0.1:8080/
+#   docker compose up -d --build
+services:
+  blender:
+    build:
+      context: .
+      args:
+        BASE_PATH: ''
+    image: trimix-blender
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8080:8080'
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    # No shell or HTTP client in the hardened image: point your proxy's health check at /health.

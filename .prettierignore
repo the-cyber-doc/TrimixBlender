@@ -1,0 +1,7 @@
+package-lock.json
+build/
+.svelte-kit/
+coverage/
+static/
+scripts/nist/
+src/lib/compressibility-coefficients.ts

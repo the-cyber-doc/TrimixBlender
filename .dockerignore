@@ -1,0 +1,10 @@
+# Allowlist: only what the build needs.
+*
+!package.json
+!package-lock.json
+!vite.config.ts
+!tsconfig.json
+!src/
+!static/
+!scripts/nist/
+!nginx.conf

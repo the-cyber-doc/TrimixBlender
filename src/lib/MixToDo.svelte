@@ -1,0 +1,275 @@
+<script lang="ts">
+	// Mix to do: the cylinder now, the target pressure, the blend's four stages and the sticker.
+	import { app, preferences } from './app.svelte';
+	import { blendWith, candidates, type Stage } from './blend';
+	import Bottle from './Bottle.svelte';
+	import { REFERENCE_TEMPERATURE } from './formulas';
+	import { mixName } from './gases';
+	import { WARNING_TEXT, blendErrorText } from './messages';
+	import NumberField from './NumberField.svelte';
+	import Sticker from './Sticker.svelte';
+	import { view } from './target';
+	import {
+		PARTIAL_PRESSURE,
+		PERCENT,
+		depthQuantity,
+		format,
+		gasVolumeQuantity,
+		pressureQuantity,
+		roundDown,
+		temperatureQuantity,
+		volumeQuantity
+	} from './units';
+
+	const bar = $derived(pressureQuantity(preferences));
+	const depth = $derived(depthQuantity(preferences));
+	const target = $derived(view(app.target, preferences.o2Narcotic));
+	const used = $derived(app.gases.filter((g) => g.used));
+	const choices = $derived(candidates(used));
+	const trimix = $derived(app.target.kind === 'trimix');
+	const m = app.mix;
+
+	const result = $derived(
+		target.valid
+			? blendWith(
+					{
+						kind: app.target.kind,
+						target: target.mix,
+						targetPressure: m.targetPressure,
+						volume: m.volume,
+						start: m.start,
+						startPressure: m.startPressure,
+						temperature: m.compensate ? m.temperature : REFERENCE_TEMPERATURE,
+						model: preferences.model
+					},
+					used,
+					m.sources
+				)
+			: undefined
+	);
+	const plan = $derived(result?.ok ? result : undefined);
+	const topName = $derived(plan ? plan.sources.top.name : 'Air');
+
+	const TITLES: Record<Stage['step'], string> = { start: '1. Now', o2: '2. + O2', he: '3. + He', top: '4. + top-up' };
+	function title(stage: Stage, index: number) {
+		if (stage.step === 'top') return `${index + 1}. + ${topName}`;
+		return TITLES[stage.step];
+	}
+	function added(stage: Stage) {
+		if (!plan || stage.step === 'start') return '';
+		const source = plan.sources[stage.step];
+		return `+${format(bar, stage.added)} ${source?.name ?? ''}`;
+	}
+
+	type Role = 'o2' | 'he' | 'top';
+	const ROLES: { role: Role; label: string }[] = [
+		{ role: 'o2', label: 'O2 from' },
+		{ role: 'he', label: 'He from' },
+		{ role: 'top', label: 'Top up with' }
+	];
+	function choose(role: Role, id: string) {
+		if (id) m.sources[role] = id;
+		else delete m.sources[role];
+	}
+</script>
+
+<div class="group">
+	<h3>Cylinder now</h3>
+	<div class="fields">
+		<NumberField
+			label="O2"
+			quantity={PERCENT}
+			value={m.start.o2}
+			testid="start-o2"
+			onchange={(v) => (m.start.o2 = v ?? 0)}
+		/>
+		<NumberField
+			label="He"
+			quantity={PERCENT}
+			value={m.start.he}
+			testid="start-he"
+			onchange={(v) => (m.start.he = v ?? 0)}
+		/>
+		<NumberField
+			label="Pressure"
+			quantity={bar}
+			value={m.startPressure}
+			testid="start-pressure"
+			onchange={(v) => (m.startPressure = v ?? 0)}
+		/>
+		<NumberField
+			label="Volume"
+			quantity={volumeQuantity(preferences)}
+			value={m.volume}
+			testid="volume"
+			onchange={(v) => (m.volume = v ?? 0)}
+		/>
+	</div>
+	<p class="hint">Currently {mixName(m.start)}. Volume: the cylinder's water volume.</p>
+</div>
+
+<div class="group">
+	<h3>Target</h3>
+	<div class="fields">
+		<NumberField
+			label="Target pressure"
+			quantity={bar}
+			value={m.targetPressure}
+			testid="target-pressure"
+			onchange={(v) => (m.targetPressure = v ?? 0)}
+		/>
+	</div>
+	<dl class="summary numbers" data-testid="reminder">
+		<div>
+			<dt>Mix</dt>
+			<dd>{mixName(target.mix)}</dd>
+		</div>
+		<div>
+			<dt>MOD</dt>
+			<dd>{format(depth, target.mod)} <small>(PPO2 {format(PARTIAL_PRESSURE, app.target.ppo2)})</small></dd>
+		</div>
+		{#if target.end !== null}<div>
+				<dt>END</dt>
+				<dd>{format(depth, target.end)}</dd>
+			</div>{/if}
+		<div>
+			<dt>PPO2</dt>
+			<dd>{format(PARTIAL_PRESSURE, target.pp.o2)}</dd>
+		</div>
+		{#if trimix}<div>
+				<dt>PPHe</dt>
+				<dd>{format(PARTIAL_PRESSURE, target.pp.he)}</dd>
+			</div>{/if}
+		<div>
+			<dt>PPN2</dt>
+			<dd>{format(PARTIAL_PRESSURE, target.pp.n2)}</dd>
+		</div>
+		<div>
+			<dt>Gas when full</dt>
+			<dd data-testid="free-gas">{plan ? format(gasVolumeQuantity(preferences), plan.freeGas) : '–'}</dd>
+		</div>
+	</dl>
+	<p class="hint">
+		Partial pressures at {app.target.depth !== null
+			? `the target depth (${format(depth, app.target.depth)})`
+			: 'the MOD'}. Gas when full: free gas volume at 1 bar and 15 °C.
+	</p>
+</div>
+
+<div class="group">
+	<label class="check"
+		><input type="checkbox" bind:checked={m.compensate} data-testid="compensate" /> Temperature compensated</label
+	>
+	{#if m.compensate}
+		<div class="fields">
+			<NumberField
+				label="Cylinder temperature while filling"
+				quantity={temperatureQuantity(preferences)}
+				value={m.temperature}
+				testid="temperature"
+				onchange={(v) => v !== null && (m.temperature = v)}
+			/>
+		</div>
+		<p class="hint">
+			The pressures below are read at this temperature; the target pressure is reached once the cylinder is back at 15
+			°C.
+		</p>
+	{/if}
+</div>
+
+<div class="fields">
+	{#each ROLES as { role, label } (role)}
+		{#if role !== 'he' || trimix}
+			<label>
+				<span>{label}</span>
+				<select
+					value={m.sources[role] ?? ''}
+					onchange={(e) => choose(role, e.currentTarget.value)}
+					data-testid="source-{role}"
+				>
+					<option value=""
+						>Automatic{plan?.sources[role] && !m.sources[role]
+							? ` (${plan.sources[role].name}, ${format(bar, plan.sources[role].pressure)})`
+							: ''}</option
+					>
+					{#each choices[role] as gas (gas.id)}
+						<option value={gas.id}>{gas.name}, {format(bar, gas.pressure)}</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
+	{/each}
+</div>
+
+{#if result && !result.ok}
+	<div class="message error" role="alert" data-testid="blend-error">
+		<p>{blendErrorText(result.error, preferences)}</p>
+		{#if result.error.code === 'drain'}
+			{@const drainTo = roundDown(bar, result.error.drainTo)}
+			<button type="button" class="secondary" onclick={() => (m.startPressure = drainTo)}
+				>Set the cylinder to {format(bar, drainTo)}</button
+			>
+		{/if}
+	</div>
+{:else if !result}
+	<p class="message error" role="alert" data-testid="blend-error">Check the target mix first.</p>
+{/if}
+
+{#if plan}
+	{#each plan.warnings as warning (warning)}
+		<p class="message warning">{WARNING_TEXT[warning]}</p>
+	{/each}
+	<div class="bottles" style:--count={plan.stages.length}>
+		{#each plan.stages as stage, i (stage.step)}
+			<Bottle {stage} title={title(stage, i)} added={added(stage)} {bar} {topName} />
+		{/each}
+	</div>
+	<div class="sticker-row">
+		<Sticker {plan} {bar} />
+	</div>
+	<p class="hint">Check the final mix with an analyser before use.</p>
+{/if}
+
+<style>
+	.group {
+		display: grid;
+		gap: var(--space-2);
+	}
+
+	.summary {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-5);
+		margin: 0;
+	}
+
+	.summary dt {
+		font-size: var(--text-xs);
+		color: var(--muted);
+	}
+
+	.summary dd {
+		margin: 0;
+		font-weight: 600;
+	}
+
+	.message p {
+		margin: 0 0 var(--space-2);
+	}
+
+	.message p:last-child {
+		margin: 0;
+	}
+
+	.bottles {
+		display: grid;
+		grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+		gap: var(--space-2);
+		align-items: end;
+	}
+
+	.sticker-row {
+		display: flex;
+		justify-content: center;
+	}
+</style>
