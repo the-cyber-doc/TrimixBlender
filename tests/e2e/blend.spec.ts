@@ -200,3 +200,27 @@ test('trimix: %He, END and gas density are linked', async ({ page }) => {
 	await expect(page.getByTestId('target-density')).toBeDisabled();
 	await expect(page.getByTestId('end')).toBeDisabled();
 });
+
+test('source lists: only the gases in use, showing the one the blend uses', async ({ page }) => {
+	const top = page.getByTestId('source-top');
+	const selectedText = (select: typeof top) => select.locator('option:checked').textContent();
+	// No "Automatic" entry: the two air banks only, the 200 bar one picked (enough for 200 bar).
+	await expect(top.locator('option')).toHaveText(['Air, 200 bar', 'Air, 300 bar']);
+	expect(await selectedText(top)).toBe('Air, 200 bar');
+	await expect(page.getByTestId('source-o2').locator('option')).toHaveText(['O2, 200 bar']);
+	// 230 bar: the 300 bar bank is picked.
+	await type(page, 'target-pressure', '230');
+	await expect(top.locator('option:checked')).toHaveText('Air, 300 bar');
+	// A choice sticks: the 200 bar bank cannot reach 230 bar.
+	await top.selectOption({ label: 'Air, 200 bar' });
+	await expect(page.getByTestId('blend-error')).toContainText('The top-up gas (200 bar)');
+	await top.selectOption({ label: 'Air, 300 bar' });
+	await expect(page.getByTestId('sticker')).toBeVisible();
+	// The chosen gas unchecked: back to a gas in use.
+	await page.getByRole('checkbox', { name: 'Use Air' }).last().uncheck();
+	await expect(top.locator('option')).toHaveText(['Air, 200 bar']);
+	// No gas in use for a role: the list is disabled.
+	await page.getByRole('checkbox', { name: 'Use O2' }).uncheck();
+	await expect(page.getByTestId('source-o2')).toBeDisabled();
+	await expect(page.getByTestId('source-o2').locator('option')).toHaveText(['No gas in use']);
+});

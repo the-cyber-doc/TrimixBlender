@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Mix to do: the cylinder now, the target pressure, the blend's four stages and the sticker.
 	import { app, preferences } from './app.svelte';
-	import { blendWith, candidates, type Stage } from './blend';
+	import { blendWith, candidates, validChoices, type Stage } from './blend';
 	import Bottle from './Bottle.svelte';
 	import { REFERENCE_TEMPERATURE } from './formulas';
 	import { mixName } from './gases';
@@ -28,6 +28,8 @@
 	const used = $derived(app.gases.filter((g) => g.used));
 	const choices = $derived(candidates(used));
 	const trimix = $derived(app.target.kind === 'trimix');
+	// The sources chosen by the user and still valid; the others are picked by blendWith.
+	const chosen = $derived(validChoices(app.mix.sources, used));
 	const m = app.mix;
 
 	const result = $derived(
@@ -44,7 +46,7 @@
 						model: preferences.model
 					},
 					used,
-					m.sources
+					chosen
 				)
 			: undefined
 	);
@@ -68,10 +70,8 @@
 		{ role: 'he', label: 'He from' },
 		{ role: 'top', label: 'Top up with' }
 	];
-	function choose(role: Role, id: string) {
-		if (id) m.sources[role] = id;
-		else delete m.sources[role];
-	}
+	/** The gas shown in a role's list: the user's choice, else the one the blend picked, else the first. */
+	const selected = (role: Role) => chosen[role] ?? plan?.sources[role]?.id ?? choices[role][0]?.id ?? '';
 </script>
 
 <div class="group">
@@ -190,17 +190,15 @@
 			<label>
 				<span>{label}</span>
 				<select
-					value={m.sources[role] ?? ''}
-					onchange={(e) => choose(role, e.currentTarget.value)}
+					value={selected(role)}
+					disabled={choices[role].length === 0}
+					onchange={(e) => (m.sources[role] = e.currentTarget.value)}
 					data-testid="source-{role}"
 				>
-					<option value=""
-						>Automatic{plan?.sources[role] && !m.sources[role]
-							? ` (${plan.sources[role].name}, ${format(bar, plan.sources[role].pressure)})`
-							: ''}</option
-					>
 					{#each choices[role] as gas (gas.id)}
 						<option value={gas.id}>{gas.name}, {format(bar, gas.pressure)}</option>
+					{:else}
+						<option value="">No gas in use</option>
 					{/each}
 				</select>
 			</label>

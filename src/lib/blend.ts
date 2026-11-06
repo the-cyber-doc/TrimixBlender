@@ -279,6 +279,20 @@ export function candidates(gases: readonly Source[]) {
 	};
 }
 
+export type Choices = { o2?: string; he?: string; top?: string };
+
+/** The chosen sources still valid: each one a candidate for its role among `gases` (a gas since
+ * removed, unchecked or changed into another kind of gas is chosen automatically again). */
+export function validChoices(chosen: Choices, gases: readonly Source[]): Choices {
+	const all = candidates(gases);
+	const out: Choices = {};
+	for (const role of ['o2', 'he', 'top'] as const) {
+		const id = chosen[role];
+		if (id && all[role].some((g) => g.id === id)) out[role] = id;
+	}
+	return out;
+}
+
 /** The blend with the sources picked automatically, unless `chosen` fixes one: the first combination
  * that works, saving the higher-pressure banks (lowest pressure first); else the last one's error.
  * With no candidate for a role, blend() reports the missing source. */

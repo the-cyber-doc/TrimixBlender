@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { blend, blendWith, candidates, type BlendInput, type BlendPlan, type BlendResult, type Source } from './blend';
+import {
+	blend,
+	blendWith,
+	candidates,
+	validChoices,
+	type BlendInput,
+	type BlendPlan,
+	type BlendResult,
+	type Source
+} from './blend';
 import { AIR, REFERENCE_TEMPERATURE, celsiusToKelvin, moles } from './formulas';
 
 const O2: Source = { id: 'o2', name: 'O2', o2: 1, he: 0, pressure: 200 };
@@ -317,6 +326,13 @@ describe('choosing the sources', () => {
 		const tx = { ...rest, kind: 'trimix' as const, target: { o2: 0.21, he: 0.35 } };
 		expect(ok(blendWith(tx, gases)).sources.he?.id).toBe('he');
 		expect(ok(blendWith(rest, gases)).sources.he).toBeUndefined();
+	});
+
+	it('keeps only the chosen sources still valid for their role', () => {
+		expect(validChoices({ o2: 'o2', he: 'he', top: 'air' }, gases)).toEqual({ o2: 'o2', he: 'he', top: 'air' });
+		// Removed or unchecked; air is no O2 source; pure O2 cannot top up.
+		expect(validChoices({ o2: 'air', he: 'gone', top: 'o2' }, gases)).toEqual({});
+		expect(validChoices({}, gases)).toEqual({});
 	});
 
 	it('reports a missing source', () => {
