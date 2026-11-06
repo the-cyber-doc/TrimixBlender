@@ -93,3 +93,19 @@ test('the bottles stand on one line, whatever their captions and legends', async
 	expect(Math.abs(n.top.bottom - n.start.bottom)).toBeLessThan(1);
 	expect(Math.abs(n.o2.bottom - n.start.bottom)).toBeLessThan(1);
 });
+
+test('the filling temperature sits next to its checkbox on desktop, below it on phones', async ({ page }) => {
+	await page.goto('/');
+	await page.getByTestId('compensate').check();
+	const box = (await page.getByTestId('compensate').boundingBox())!;
+	const field = (await page.getByTestId('temperature').boundingBox())!;
+	const centre = box.y + box.height / 2;
+	if (page.viewportSize()!.width > 640) {
+		// Same line: the checkbox is level with the input, to its left.
+		expect(centre).toBeGreaterThan(field.y);
+		expect(centre).toBeLessThan(field.y + field.height);
+		expect(field.x).toBeGreaterThan(box.x + box.width);
+	} else {
+		expect(field.y).toBeGreaterThan(box.y + box.height);
+	}
+});

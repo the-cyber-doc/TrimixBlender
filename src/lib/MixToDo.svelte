@@ -162,11 +162,11 @@
 </div>
 
 <div class="group">
-	<label class="check"
-		><input type="checkbox" bind:checked={m.compensate} data-testid="compensate" /> Temperature compensated</label
-	>
-	{#if m.compensate}
-		<div class="fields">
+	<div class="temperature">
+		<label class="check compensate"
+			><input type="checkbox" bind:checked={m.compensate} data-testid="compensate" /> Temperature compensated</label
+		>
+		{#if m.compensate}
 			<NumberField
 				label="Cylinder temperature while filling"
 				quantity={temperatureQuantity(preferences)}
@@ -174,7 +174,9 @@
 				testid="temperature"
 				onchange={(v) => v !== null && (m.temperature = v)}
 			/>
-		</div>
+		{/if}
+	</div>
+	{#if m.compensate}
 		<p class="hint">
 			The pressures below are read at this temperature; the target pressure is reached once the cylinder is back at 15
 			°C.
@@ -239,6 +241,30 @@
 	.group {
 		display: grid;
 		gap: var(--space-2);
+	}
+
+	/* Desktop: the checkbox and the temperature on one line (the checkbox level with the input);
+	   phones: the temperature below. */
+	.temperature {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: var(--space-2) var(--space-6);
+	}
+
+	.compensate {
+		height: var(--control-height);
+	}
+
+	@media (max-width: 40rem) {
+		.temperature {
+			flex-direction: column;
+			align-items: start;
+		}
+
+		.compensate {
+			height: auto;
+		}
 	}
 
 	.summary {
