@@ -25,7 +25,7 @@ then top-up gas to add to a cylinder, and shows the four stages as cylinders and
     compensation.
   - Outputs: the free gas volume, and a reminder of MOD, END, PPO2, PPHe and PPN2.
   - Four cylinders, filled to scale: O2 green, He brown, N2 black, Air blue, empty white, in every theme.
-  - The sticker: `Nx: 32 | 28 bar | 200 bar` or `Tx: 21/35 | 19 bar | 89 bar | 200 bar`.
+  - The sticker: `Nx: 32 | O2 28 bar | 200 bar` or `Tx: 21/35 | O2 19 bar | He 89 bar | 200 bar`.
   - Impossible mixes are explained. When the cylinder holds too much O2, too much He or too much gas, the app gives the
     pressure to drain it down to.
 - **Preferences**: °C/°F, bar/psi, l/cu ft, m/ft, real/ideal gases, END with O2 narcotic or N2 only.

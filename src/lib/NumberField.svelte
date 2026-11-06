@@ -37,7 +37,7 @@
 	}
 </script>
 
-<label>
+<label class="field">
 	<span
 		>{label}{#if quantity.unit}&nbsp;<span class="unit">({quantity.unit})</span>{/if}</span
 	>
@@ -60,6 +60,16 @@
 </label>
 
 <style>
+	/* Values are 2 to 4 digits (and a decimal): a compact input; a longer label stays on one line. */
+	.field {
+		min-width: var(--field-width);
+		max-width: 100%;
+	}
+
+	.field input {
+		width: var(--field-width);
+	}
+
 	.unit {
 		white-space: nowrap;
 	}

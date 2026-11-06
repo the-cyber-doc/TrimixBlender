@@ -24,7 +24,7 @@ test('nitrox: %O2, MOD and PPO2 are linked', async ({ page }) => {
 });
 
 test('nitrox blend: three bottles and the Nx sticker', async ({ page }) => {
-	await expect(page.getByTestId('sticker')).toHaveText(/^Nx: 32\s*\|\s*2\d\.\d bar\s*\|\s*200 bar$/);
+	await expect(page.getByTestId('sticker')).toHaveText(/^Nx: 32\s*\|\s*O2 2\d\.\d bar\s*\|\s*200 bar$/);
 	await expect(page.getByTestId('bottle-he')).toHaveCount(0);
 	await expect(page.getByTestId('bottle-o2').getByTestId('added')).toContainText('O2');
 	await expect(page.getByTestId('free-gas')).toHaveText(/^2\d{3} l$/);
@@ -33,7 +33,7 @@ test('nitrox blend: three bottles and the Nx sticker', async ({ page }) => {
 test('air blend: only air added', async ({ page }) => {
 	await type(page, 'target-o2', '21');
 	await expect(page.getByTestId('bottle-o2').getByTestId('added')).toHaveText('+0 bar O2');
-	await expect(page.getByTestId('sticker')).toHaveText(/^Nx: 21\s*\|\s*0 bar\s*\|\s*200 bar$/);
+	await expect(page.getByTestId('sticker')).toHaveText(/^Nx: 21\s*\|\s*O2 0 bar\s*\|\s*200 bar$/);
 });
 
 test('trimix: %He and END are linked, four bottles and the Tx sticker', async ({ page }) => {
@@ -47,7 +47,9 @@ test('trimix: %He and END are linked, four bottles and the Tx sticker', async ({
 	await expect(page.getByTestId('target-he')).toHaveValue('42.9');
 	await type(page, 'target-he', '35');
 	await expect(page.getByTestId('bottle-he')).toBeVisible();
-	await expect(page.getByTestId('sticker')).toHaveText(/^Tx: 21\/35\s*\|.*bar\s*\|.*bar\s*\|\s*200 bar$/);
+	await expect(page.getByTestId('sticker')).toHaveText(
+		/^Tx: 21\/35\s*\|\s*O2 [\d.]+ bar\s*\|\s*He [\d.]+ bar\s*\|\s*200 bar$/
+	);
 	const reminder = page.getByTestId('reminder');
 	await expect(reminder).toContainText('Tx21/35');
 	await expect(reminder).toContainText('PPHe');

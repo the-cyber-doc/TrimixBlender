@@ -58,8 +58,8 @@
 	}
 
 	.gas {
-		display: grid;
-		grid-template-columns: auto 1fr 1fr;
+		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-2) var(--space-3);
 		align-items: end;
 		padding-bottom: var(--space-3);
@@ -67,35 +67,34 @@
 	}
 
 	.use {
-		grid-row: span 2;
-		align-self: center;
+		align-self: end;
+		height: var(--control-height);
 	}
 
 	.name {
-		grid-column: span 2;
+		width: 8rem;
 	}
 
 	.wide {
-		grid-column: 1 / -1;
+		flex-basis: 100%;
 	}
 
 	.unused {
 		opacity: 0.6;
 	}
 
-	@media (min-width: 40rem) {
-		.gas {
-			grid-template-columns: auto 2fr 1fr 1fr 1.2fr auto;
+	/* Phones: use, name and Remove on the first line, the numbers on the second. */
+	@media (max-width: 40rem) {
+		.remove {
+			order: 1;
 		}
 
-		.use {
-			grid-row: auto;
-			align-self: end;
-			height: var(--control-height);
+		.gas > :global(.field) {
+			order: 2;
 		}
 
-		.name {
-			grid-column: auto;
+		.wide {
+			order: 3;
 		}
 	}
 </style>

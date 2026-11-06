@@ -21,6 +21,8 @@
 	--radius: 10px;
 	--radius-pill: 999px;
 	--control-height: 2.5rem;
+	/* A number field: 4 digits and a decimal, with room to spare. */
+	--field-width: 6.5rem;
 	--shadow-menu: 0 6px 24px rgb(0 0 0 / 0.15);
 	--shadow-banner: 0 0.25rem 1rem rgb(0 0 0 / 0.2);
 	--page-width: 60rem;
@@ -39,6 +41,13 @@
 	--error: #b3261e;
 	--error-bg: #fde8e6;
 	color-scheme: light;
+}
+
+/* Phones: slightly narrower number fields, still 4 digits and a decimal. */
+@media (max-width: 40rem) {
+	:root {
+		--field-width: 5.5rem;
+	}
 }
 
 @media (prefers-color-scheme: dark) {
@@ -176,10 +185,10 @@ button.secondary {
 	background: var(--warning-bg);
 }
 
-/* A row of form fields that wraps on narrow screens. */
+/* A row of form fields that wraps on narrow screens; each field keeps its own (compact) width. */
 .fields {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+	display: flex;
+	flex-wrap: wrap;
 	gap: var(--space-3);
 	align-items: end;
 }

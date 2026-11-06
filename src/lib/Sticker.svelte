@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The label for the cylinder: "Nx: 32 | O2 to | final" or "Tx: 21/35 | O2 to | He to | final".
+	// The label for the cylinder: "Nx: 32 | O2 28 bar | 200 bar" or "Tx: 21/35 | O2 19 bar | He 89 bar | 200 bar".
 	import type { BlendPlan } from './blend';
 	import { PERCENT, format, type Quantity } from './units';
 
@@ -11,7 +11,10 @@
 			? `Tx: ${format(PERCENT, final.mix.o2, false)}/${format(PERCENT, final.mix.he, false)}`
 			: `Nx: ${format(PERCENT, final.mix.o2, false)}`
 	);
-	const cells = $derived(plan.stages.slice(1).map((s) => format(bar, s.pressure)));
+	// The pressure to fill to at each step, named after the gas added (the final one stands alone):
+	// "O2 71.3 bar | He 266.7 bar | 292 bar".
+	const GAS = { start: '', o2: 'O2 ', he: 'He ', top: '' } as const;
+	const cells = $derived(plan.stages.slice(1).map((s) => `${GAS[s.step]}${format(bar, s.pressure)}`));
 </script>
 
 <p class="sticker {plan.kind}" data-testid="sticker">
