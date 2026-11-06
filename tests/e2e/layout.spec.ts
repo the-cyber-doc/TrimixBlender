@@ -48,3 +48,48 @@ test('the page fits narrow screens', async ({ page }) => {
 	expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
 	await expect(page.getByTestId('bottle-top')).toBeVisible();
 });
+
+/** The bottom edge of each step's drawing, by step. */
+async function bottleBottoms(page: import('@playwright/test').Page) {
+	const out: Record<string, { top: number; bottom: number }> = {};
+	for (const step of ['start', 'o2', 'he', 'top']) {
+		const svg = page.getByTestId(`bottle-${step}`).locator('svg');
+		if ((await svg.count()) === 0) continue;
+		const box = (await svg.boundingBox())!;
+		out[step] = { top: box.y, bottom: box.y + box.height };
+	}
+	return out;
+}
+
+test('the bottles stand on one line, whatever their captions and legends', async ({ page }) => {
+	await page.goto('/');
+	await page.getByLabel('Trimix').check();
+	for (const [id, v] of [
+		['target-o2', '21'],
+		['target-he', '35'],
+		['start-pressure', '50']
+	]) {
+		await page.getByTestId(id).fill(v);
+		await page.getByTestId(id).blur();
+	}
+	await expect(page.getByTestId('bottle-top')).toBeVisible();
+	const b = await bottleBottoms(page);
+	const phone = page.viewportSize()!.width <= 640;
+	// Desktop: all four on one line. Phone: steps 1–2, then 3–4 below.
+	const lines = phone
+		? [
+				['start', 'o2'],
+				['he', 'top']
+			]
+		: [['start', 'o2', 'he', 'top']];
+	for (const line of lines) {
+		for (const step of line) expect(Math.abs(b[step].bottom - b[line[0]].bottom)).toBeLessThan(1);
+	}
+	if (phone) expect(b.he.top).toBeGreaterThan(b.start.bottom);
+	// Nitrox: three steps, one line on every screen.
+	await page.getByLabel('Nitrox').check();
+	await expect(page.getByTestId('bottle-he')).toHaveCount(0);
+	const n = await bottleBottoms(page);
+	expect(Math.abs(n.top.bottom - n.start.bottom)).toBeLessThan(1);
+	expect(Math.abs(n.o2.bottom - n.start.bottom)).toBeLessThan(1);
+});

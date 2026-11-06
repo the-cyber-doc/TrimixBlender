@@ -69,20 +69,22 @@
 </figure>
 
 <style>
+	/* Caption, drawing and legend each take one row of the parent's grid (subgrid): the
+	   captions of a row of bottles share one height, so the drawings start, and end, level,
+	   whatever the length of each caption and legend (MixToDo.svelte .bottles). */
 	.bottle {
 		margin: 0;
 		display: grid;
+		grid-row: span 3;
+		grid-template-rows: subgrid;
 		justify-items: center;
-		gap: var(--space-1);
+		row-gap: var(--space-1);
 		min-width: 0;
 	}
 
-	/* Same height in every bottle (with or without the "added" line): the bottles line up. */
 	figcaption {
 		display: grid;
-		grid-template-rows: auto auto auto;
-		align-content: start;
-		min-height: 4.5em;
+		align-self: end;
 		justify-items: center;
 		text-align: center;
 		font-size: var(--text-sm);
@@ -98,6 +100,7 @@
 	}
 
 	svg {
+		align-self: end;
 		width: 100%;
 		max-width: 6rem;
 		height: auto;

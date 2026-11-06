@@ -224,7 +224,7 @@
 	{#each plan.warnings as warning (warning)}
 		<p class="message warning">{WARNING_TEXT[warning]}</p>
 	{/each}
-	<div class="bottles" style:--count={plan.stages.length}>
+	<div class="bottles" class:four={plan.stages.length === 4} style:--count={plan.stages.length}>
 		{#each plan.stages as stage, i (stage.step)}
 			<Bottle {stage} title={title(stage, i)} added={added(stage)} {bar} {topName} />
 		{/each}
@@ -266,11 +266,19 @@
 		margin: 0;
 	}
 
+	/* One row of bottles; each bottle spans three rows (caption, drawing, legend: Bottle.svelte). */
 	.bottles {
 		display: grid;
 		grid-template-columns: repeat(var(--count), minmax(0, 1fr));
-		gap: var(--space-2);
-		align-items: end;
+		gap: var(--space-1) var(--space-2);
+	}
+
+	/* Phones: trimix's four steps on two lines, 1–2 then 3–4. */
+	@media (max-width: 40rem) {
+		.bottles.four {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			row-gap: var(--space-4);
+		}
 	}
 
 	.sticker-row {
