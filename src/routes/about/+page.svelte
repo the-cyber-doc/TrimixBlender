@@ -1,7 +1,20 @@
 <script lang="ts">
-	import { APP_BUILD, APP_VERSION, BUILD_DATE, versionLabel } from '#lib/about.js';
+	import {
+		APP_BUILD,
+		APP_VERSION,
+		BUILD_DATE,
+		COPYRIGHT_HOLDER,
+		DOCKER_URL,
+		GITHUB_URL,
+		LICENSE_URL,
+		versionLabel
+	} from '#lib/about.js';
+	import { url } from '#lib/base.js';
 	import { Z_MAX_ERROR } from '#lib/compressibility-coefficients.js';
 	import { REFERENCES } from '#lib/references.js';
+
+	const built = new Date(BUILD_DATE);
+	const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(built);
 </script>
 
 <svelte:head><title>About · Trimix Blender</title></svelte:head>
@@ -9,6 +22,10 @@
 <main class="page">
 	<div class="card about">
 		<h1>About</h1>
+		<p class="app">
+			<img src={url('/favicon.svg')} alt="" width="48" height="48" />
+			<span>Trimix Blender</span>
+		</p>
 		<p>
 			Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how much O2, then He, then top-up gas
 			to add to a cylinder. It runs entirely in your browser and works offline once loaded; nothing is sent anywhere.
@@ -17,12 +34,19 @@
 			Gas blending is dangerous: oxygen fires, wrong mixes. Only blend if you are trained to, and always analyse the
 			final mix before diving it.
 		</p>
-		<dl class="numbers">
-			<dt>Version</dt>
-			<dd data-testid="version">{versionLabel(APP_VERSION, APP_BUILD)}</dd>
-			<dt>Built</dt>
-			<dd>{new Date(BUILD_DATE).toLocaleString()}</dd>
-		</dl>
+		<ul class="facts">
+			<li data-testid="version">Version {versionLabel(APP_VERSION, APP_BUILD)}</li>
+			<li>Built on {date}</li>
+		</ul>
+		<ul class="facts">
+			<li><a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">Source code on GitHub</a></li>
+			<li><a href={DOCKER_URL} target="_blank" rel="noopener noreferrer">Docker image on Docker Hub</a></li>
+		</ul>
+		<p class="legal" data-testid="copyright">
+			© {built.getUTCFullYear()}
+			{COPYRIGHT_HOLDER} ·
+			<a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">Licensed under the GNU GPL v3</a>
+		</p>
 
 		<h2>How it calculates</h2>
 		<ul>
@@ -68,19 +92,28 @@
 		margin: 0;
 	}
 
-	dl {
+	.app {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		font-size: var(--text-title);
+		font-weight: 600;
+	}
+
+	.facts {
+		list-style: none;
+		padding: 0;
 		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-4);
-		margin: 0;
+		gap: var(--space-1);
 	}
 
-	dt {
+	.legal {
 		color: var(--muted);
+		font-size: var(--text-label);
 	}
 
-	dd {
-		margin: 0;
+	h2 {
+		margin-top: var(--space-4);
 	}
 
 	.references {

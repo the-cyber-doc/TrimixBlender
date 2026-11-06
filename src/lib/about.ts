@@ -1,4 +1,5 @@
-// The build's version, commit and date (vite.config.ts), for the About page.
+// What the About page shows about this build (set at build time, vite.config.ts), and where
+// the project lives.
 
 export const APP_VERSION: string = __APP_VERSION__;
 export const APP_BUILD: string = __APP_BUILD__;
@@ -9,3 +10,9 @@ export const BUILD_DATE: string = __BUILD_DATE__;
 export function versionLabel(version: string, build: string): string {
 	return version === 'dev' ? `dev (build ${build})` : version;
 }
+
+export const GITHUB_URL = 'https://github.com/the-cyber-doc/TrimixBlender';
+export const LICENSE_URL = `${GITHUB_URL}/blob/main/LICENSE`;
+/** The image published by the CI on each release (.github/workflows/ci-cd.yml). */
+export const DOCKER_URL = 'https://hub.docker.com/r/thecyberdoc/trimix-blender';
+export const COPYRIGHT_HOLDER = 'the-cyber-doc';
