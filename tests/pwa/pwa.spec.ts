@@ -20,9 +20,9 @@ test('works offline after the first visit, on every page', async ({ page, contex
 	await context.setOffline(true);
 	await page.reload();
 	await expect(page.getByTestId('sticker')).toBeVisible();
-	await page.goto('about');
+	await page.goto('./#/about');
 	await expect(page.getByRole('heading', { name: 'References' })).toBeVisible();
-	await page.goto('preferences');
+	await page.goto('./#/preferences');
 	await expect(page.getByRole('heading', { name: 'Preferences' })).toBeVisible();
 });
 

@@ -1,7 +1,8 @@
-// The app's base path: '' at the domain's root, e.g. '/blender' under a subfolder
-// (BASE_PATH at build time, vite.config.ts). Every app-absolute URL goes through url().
+// URLs inside the app. The app can be published in any folder (vite.config.ts): every URL is
+// relative to index.html, and the pages are in the hash.
 
-export const base: string = __BASE_PATH__;
+/** A page's link: '/about' → '#/about' (hash routing). */
+export const page = (path: string) => `#${path}`;
 
-/** An app path ('/about') as the browser must request it. */
-export const url = (path: string) => base + path;
+/** A file of the app (static/ or the build), relative to index.html: '/favicon.svg' → './favicon.svg'. */
+export const asset = (path: string) => `.${path}`;

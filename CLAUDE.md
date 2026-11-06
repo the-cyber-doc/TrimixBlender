@@ -13,6 +13,10 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
 - Chemical names are plain text: O2, N2, PPO2, PPHe, PPN2, never subscripts.
 - Node 26 is under fnm: `export PATH=~/.local/share/fnm/node-versions/v26.12.1/installation/bin:$PATH`.
 - Before finishing: `npm run check && npm run lint && npm run test:coverage && npx playwright test`;
-  for Docker changes also `tools/test-e2e-stack.sh` (and `--base-path /blender`).
-- Browser tests navigate with relative paths (`page.goto('./')`, `'about'`), never `'/…'`: they also run under a base path.
+  for Docker changes also `tools/test-e2e-stack.sh` (and `--prefix /tools/blender`).
+- Publishable in any folder after the build: hash routing + relative URLs (`#lib/base.js`: `page()` for links,
+  `asset()` for files; never an absolute `/…`). `scripts/relative-index.js` fixes index.html after `vite build`.
+- Browser tests navigate with relative URLs (`page.goto('./')`, `'./#/about'`); every suite also runs from
+  `/any/deep/folder/` (playwright.config.ts). Open a hash page as the first navigation of a test, not right after
+  another page load (the app's start-up can overwrite the hash).
 - CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives + image links).

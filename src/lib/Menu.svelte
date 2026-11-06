@@ -3,7 +3,7 @@
 	// and navigation.
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
-	import { url } from './base';
+	import { page as link } from './base';
 
 	let open = $state(false);
 	let root: HTMLElement;
@@ -38,10 +38,8 @@
 		<ul class="menu" role="menu">
 			{#each ENTRIES as entry (entry.path)}
 				<li role="none">
-					<a
-						role="menuitem"
-						href={url(entry.path)}
-						aria-current={page.url.pathname === url(entry.path) ? 'page' : undefined}>{entry.label}</a
+					<a role="menuitem" href={link(entry.path)} aria-current={page.route.id === entry.path ? 'page' : undefined}
+						>{entry.label}</a
 					>
 				</li>
 			{/each}

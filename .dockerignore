@@ -7,4 +7,5 @@
 !src/
 !static/
 !scripts/nist/
+!scripts/relative-index.js
 !nginx.conf

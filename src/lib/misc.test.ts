@@ -13,19 +13,18 @@ describe('references', () => {
 
 describe('build constants', () => {
 	it('come from vite.config.ts', async () => {
-		vi.stubGlobal('__BASE_PATH__', '/blender');
 		vi.stubGlobal('__APP_VERSION__', '1.2.3');
 		vi.stubGlobal('__APP_BUILD__', 'abc1234');
 		vi.stubGlobal('__BUILD_DATE__', '2026-11-06T00:00:00Z');
-		const { url } = await import('./base');
+		const { asset, page } = await import('./base');
 		const about = await import('./about');
-		expect(url('/about')).toBe('/blender/about');
+		expect(page('/about')).toBe('#/about');
+		expect(page('/')).toBe('#/');
+		expect(asset('/favicon.svg')).toBe('./favicon.svg');
 		expect(about).toMatchObject({ APP_VERSION: '1.2.3', APP_BUILD: 'abc1234', BUILD_DATE: '2026-11-06T00:00:00Z' });
 		expect(about.GITHUB_URL).toBe('https://github.com/the-cyber-doc/TrimixBlender');
 		expect(about.LICENSE_URL).toBe(`${about.GITHUB_URL}/blob/main/LICENSE`);
 		expect(about.DOCKER_URL).toBe('https://hub.docker.com/r/thecyberdoc/trimix-blender');
-		const layout = await import('../routes/+layout');
-		expect(layout.ssr).toBe(false);
 		vi.unstubAllGlobals();
 	});
 

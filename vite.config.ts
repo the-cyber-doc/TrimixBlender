@@ -3,11 +3,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { execSync } from 'node:child_process';
 
-// Where the browser sees the app: '' (the domain's root, default) or e.g. '/blender'
-// (a subfolder; the Docker image's BASE_PATH build argument). Build time only.
-const BASE_PATH = (process.env.BASE_PATH ?? '').replace(/\/$/, '');
-if (!/^(\/[\w.~-]+)*$/.test(BASE_PATH)) throw new Error(`BASE_PATH must look like /blender, not ${BASE_PATH}`);
-
 // Shown on the About page. CI and the Docker image pass APP_VERSION / APP_COMMIT (the image's
 // build context has no .git); elsewhere they come from git, if there is one.
 function git(command: string): string | undefined {
@@ -37,7 +32,6 @@ const APP_COMMIT = commit
 
 export default defineConfig({
 	define: {
-		__BASE_PATH__: JSON.stringify(BASE_PATH),
 		__APP_VERSION__: JSON.stringify(APP_VERSION),
 		__APP_BUILD__: JSON.stringify(APP_COMMIT),
 		__BUILD_DATE__: JSON.stringify(BUILD_DATE)
@@ -48,12 +42,16 @@ export default defineConfig({
 				// Force runes mode for the project, except for libraries.
 				runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 			},
-			// Static SPA shell: no server at all. nginx serves the files (.gz next to each).
-			adapter: adapter({ pages: 'build', assets: 'build', fallback: 'index.html', precompress: true }),
+			// Static single page: no server at all, served from any folder of any web server
+			// (nginx in the image, with the .gz copies next to each file).
+			adapter: adapter({ pages: 'build', assets: 'build', precompress: true }),
 			// Registered by the app, in production builds only ($lib/pwa.ts).
 			serviceWorker: { register: false },
-			// Absolute asset paths: the service worker serves the cached "/" for any URL offline.
-			paths: { relative: false, base: BASE_PATH as '' | `/${string}` },
+			// Publishable in any folder, decided after the build: every URL is relative to the page
+			// (./_app/…), and pages are in the hash (index.html#/about), so there is only ever one
+			// page, index.html, whatever folder it is in.
+			paths: { relative: true },
+			router: { type: 'hash' },
 			// Script policy in a <meta>, with the hash of SvelteKit's inline boot script.
 			csp: { mode: 'hash', directives: { 'script-src': ['self'] } }
 		})
@@ -62,7 +60,7 @@ export default defineConfig({
 	// *.svelte.test.ts files run in happy-dom (their docblock), compiled for the browser.
 	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
 	test: {
-		include: ['src/**/*.test.ts'],
+		include: ['src/**/*.test.ts', 'scripts/**/*.test.js'],
 		// Every logic module (.ts) at 100 %: components are thin and covered by Playwright (tests/).
 		coverage: {
 			provider: 'v8',

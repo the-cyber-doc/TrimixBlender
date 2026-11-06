@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { url } from './base';
 import { checkForUpdates, onAppUpdated, registerServiceWorker } from './pwa';
-
-vi.stubGlobal('__BASE_PATH__', '');
 
 /** A fake ServiceWorkerContainer: enough of it for pwa.ts. */
 function container(controller: object | null = null) {
@@ -24,7 +21,6 @@ const as = (c: ReturnType<typeof container>) => c as unknown as ServiceWorkerCon
 afterEach(() => {
 	vi.useRealTimers();
 	vi.unstubAllGlobals();
-	vi.stubGlobal('__BASE_PATH__', '');
 });
 
 describe('service worker registration', () => {
@@ -32,7 +28,8 @@ describe('service worker registration', () => {
 		const c = container();
 		vi.stubGlobal('document', { addEventListener: vi.fn(), visibilityState: 'visible' });
 		registerServiceWorker(false, as(c));
-		expect(c.register).toHaveBeenCalledWith(url('/service-worker.js'), { scope: url('/') });
+		// Relative to index.html: wherever the app is published.
+		expect(c.register).toHaveBeenCalledWith('./service-worker.js', { scope: './' });
 		await Promise.resolve();
 	});
 

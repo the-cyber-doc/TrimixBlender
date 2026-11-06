@@ -245,8 +245,8 @@ jobs:
           name: web-build
           path: trimix-blender
 
-      # The static site, to serve as is from the root of any web server (single-page app:
-      # unknown paths must serve index.html; see the README). Archives and their checksums.
+      # The static site, to copy as is into any folder of any web server (relative URLs, hash
+      # routing: see the README). Archives and their checksums.
       - name: Package the web build
         env:
           VERSION: ${{ needs.merge-and-push.outputs.version }}
@@ -274,7 +274,7 @@ jobs:
           ## Web build
 
           \`trimix-blender-${VERSION}-web.tar.gz\` / \`.zip\` (folder \`trimix-blender/\`): the static app, to serve as is
-          from the root of any web server, with \`index.html\` for unknown paths (single-page app).
+          in any folder of any web server: no configuration, no rewrite rule.
           Checksums in \`SHA256SUMS\`.
           NOTES
 

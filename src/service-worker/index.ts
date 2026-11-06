@@ -1,7 +1,8 @@
 // Service worker: the whole app works offline. It has no server data: everything it needs
 // is the build itself.
 // - App shell (build output, static files, "/"): precached per version, cache first.
-// - Page loads: network first (a new version shows at once when online), else the cached shell.
+// - Page loads (index.html, or its folder): network first (a new version shows at once when
+//   online), else the cached shell. Pages are in the hash: there is no other page to load.
 // - Anything else: not handled.
 // A new version activates at once and deletes the old cache; the page shows "Reload"
 // ($lib/UpdateBanner.svelte). Type-checked with its own tsconfig.json (WebWorker types).
@@ -10,9 +11,8 @@ import { assets, immutable } from '$app/manifest';
 import { self as sw } from '$app/service-worker';
 
 const SHELL = `shell-${version}`;
-// The app's base path ('' or e.g. '/blender'): the service worker is at <base>/service-worker.js.
-const BASE = new URL('.', sw.location.href).pathname.replace(/\/$/, '');
-const ROOT = `${BASE}/`;
+// The folder the app is published in (whatever it is): the service worker's own, next to index.html.
+const ROOT = new URL('.', sw.location.href).pathname;
 const ASSETS = new Set([...immutable, ...assets].map((file) => new URL(file.path, sw.location.href).pathname));
 
 sw.addEventListener('install', (event) => {

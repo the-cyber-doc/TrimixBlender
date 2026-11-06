@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the production image from this checkout and run it locally (docker-compose.yaml):
-# http://127.0.0.1:8080/ (BLENDER_PORT to change it, BASE_PATH=/blender for a sub-folder).
+# http://127.0.0.1:8080/ (BLENDER_PORT to change it).
 #
 #   tools/docker-dev.sh              build, then run in the foreground (Ctrl+C stops)
 #   tools/docker-dev.sh up -d --build   any other "docker compose" arguments
@@ -26,5 +26,5 @@ elif [[ -n $commit ]]; then
 fi
 
 (($#)) || set -- up --build
-exec "${sudo[@]}" env APP_VERSION="$version" APP_COMMIT="$commit" BASE_PATH="${BASE_PATH:-}" BLENDER_PORT="${BLENDER_PORT:-8080}" \
+exec "${sudo[@]}" env APP_VERSION="$version" APP_COMMIT="$commit" BLENDER_PORT="${BLENDER_PORT:-8080}" \
 	docker compose -f "$root/docker-compose.yaml" "$@"

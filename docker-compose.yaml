@@ -1,13 +1,11 @@
 # Trimix Blender behind your TLS reverse proxy: http://127.0.0.1:8080/
 #   docker compose up -d --build        (or tools/docker-dev.sh)
-# Environment: BLENDER_PORT (default 8080), BASE_PATH (default '': the domain's root,
-# e.g. /blender), APP_VERSION and APP_COMMIT (the About page).
+# Environment: BLENDER_PORT (default 8080), APP_VERSION and APP_COMMIT (the About page).
 services:
   blender:
     build:
       context: .
       args:
-        BASE_PATH: ${BASE_PATH:-}
         APP_VERSION: ${APP_VERSION:-}
         APP_COMMIT: ${APP_COMMIT:-}
     image: trimix-blender

@@ -1,6 +1,6 @@
 // The app's side of the PWA (the service worker is src/service-worker/).
 
-import { url } from './base';
+import { asset } from './base';
 
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
 
@@ -14,7 +14,9 @@ export function registerServiceWorker(
 	if (dev) {
 		container.getRegistrations().then((all) => all.forEach((registration) => registration.unregister()));
 	} else {
-		container.register(url('/service-worker.js'), { scope: url('/') }).then(checkForUpdates, (e) => console.error(e));
+		container
+			.register(asset('/service-worker.js'), { scope: asset('/') })
+			.then(checkForUpdates, (e) => console.error(e));
 	}
 }
 

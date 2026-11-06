@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { dev } from '$app/env';
 	import { persist } from '#lib/app.svelte.js';
-	import { url } from '#lib/base.js';
+	import { asset, page } from '#lib/base.js';
 	import Menu from '#lib/Menu.svelte';
 	import { registerServiceWorker } from '#lib/pwa.js';
 	import UpdateBanner from '#lib/UpdateBanner.svelte';
@@ -18,8 +18,8 @@
 </svelte:head>
 
 <header>
-	<a class="brand" href={url('/')}>
-		<img src={url('/favicon.svg')} alt="" width="28" height="28" />
+	<a class="brand" href={page('/')}>
+		<img src={asset('/favicon.svg')} alt="" width="28" height="28" />
 		Trimix Blender
 	</a>
 	<Menu />

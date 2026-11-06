@@ -78,7 +78,6 @@ Images: run `docker login dhi.io` first.
 ```sh
 tools/docker-dev.sh                       # build from this checkout and run: http://127.0.0.1:8080/ (Ctrl+C stops)
 tools/docker-dev.sh up -d --build         # any docker compose arguments: up -d, logs -f, down…
-BASE_PATH=/blender tools/docker-dev.sh    # served under /blender/
 docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp <user>/trimix-blender:latest  # a released image
 ```
 
@@ -87,13 +86,13 @@ compose project on port 8090 (`E2E_PORT`), which is removed at the end:
 
 ```sh
 tools/test-e2e-stack.sh                                   # the image built from this checkout
-tools/test-e2e-stack.sh --base-path /blender              # built for, and tested under, /blender/
+tools/test-e2e-stack.sh --prefix /tools/blender          # the same image behind an nginx proxy, under /tools/blender/
 tools/test-e2e-stack.sh --images user/trimix-blender:1.2.3   # a published release, pulled
 tools/test-e2e-stack.sh -- -g "offline"                   # Playwright arguments after --
 ```
 
-Both scripts use `sudo docker` by themselves when your user cannot reach Docker. The tests use paths relative to the
-base URL (`./`, `about`), so the same tests run at the root and under a base path.
+Both scripts use `sudo docker` by themselves when your user cannot reach Docker. `--prefix` puts the README's
+[sub-folder proxy](#nginx-reverse-proxy) in front of the unchanged image: one image, any path.
 
 The build runs the unit tests first. Point the proxy's health check at `/health`. `index.html`, `service-worker.js`
 and the manifest are always revalidated (`Cache-Control: no-cache`); hashed files under `_app/immutable/` are cached
@@ -133,20 +132,7 @@ services:
 If nginx itself runs in a container, put both on one Docker network and remove `ports:`. Then proxy to
 `http://trimix-blender:8080` instead of `http://127.0.0.1:8080`.
 
-**Under a sub-folder** (`https://example.org/blender/`), the app must be built for it: the published image serves at
-the root only. Let Compose build the image from a release's sources (this needs `docker login dhi.io` first):
-
-```yaml
-services:
-  trimix-blender:
-    build:
-      context: https://github.com/the-cyber-doc/TrimixBlender.git#v1.2.3
-      args:
-        BASE_PATH: /blender
-        APP_VERSION: v1.2.3 # the About page: no .git in the build
-    image: trimix-blender:1.2.3-blender
-    # …then the same lines as above, from container_name: on
-```
+The same image serves any path: at a domain's root, or in a sub-folder chosen by your proxy (below).
 
 ### nginx reverse proxy
 
@@ -187,8 +173,8 @@ server {
 }
 ```
 
-**In a sub-folder** of an existing site: `https://example.org/blender/`, with the image built with
-`BASE_PATH=/blender` (above). Add these to the `server` block that already serves `https://example.org`:
+**In a sub-folder** of an existing site, any one you like: `https://example.org/blender/`. Same image, nothing to
+rebuild. Add these to the `server` block that already serves `https://example.org`:
 
 ```nginx
 location = /blender {
@@ -196,8 +182,8 @@ location = /blender {
 }
 
 location /blender/ {
-    # No URI after the address: /blender/… is forwarded unchanged (the container serves under /blender/).
-    proxy_pass http://127.0.0.1:8080;
+    # Trailing slash: the prefix is stripped, /blender/x reaches the container as /x.
+    proxy_pass http://127.0.0.1:8080/;
     proxy_http_version 1.1;
     proxy_set_header Connection        "";
     proxy_set_header Host              $host;
@@ -226,6 +212,16 @@ Check, then reload: `sudo nginx -t && sudo nginx -s reload`. Then, from outside:
 curl -sI https://blender.example.org/ | grep -iE '^(HTTP|cache-control|strict-transport|content-security)'
 curl -s https://blender.example.org/health        # ok   (sub-folder: https://example.org/blender/health)
 ```
+
+## Any folder, decided after the build
+
+The app has a single page, `index.html`. Its own pages are in the hash: `…/#/about`, `…/#/preferences`. Every URL in it
+is relative (`./_app/…`, `./favicon.svg`), so the same build works wherever `index.html` is published, whether in a
+folder of a web server or behind a proxy that strips its prefix.
+
+- SvelteKit's hash router (`vite.config.ts`) works out the folder in the browser.
+- `scripts/relative-index.js` makes the last absolute paths, the ones SvelteKit writes into `index.html`, relative
+  after `vite build`. It also updates the hash of the page's inline script in its Content-Security-Policy.
 
 ## Version shown on the About page
 
@@ -264,13 +260,14 @@ Dependabot needs these as Dependabot secrets too.
 
 ### Serving the web build with another web server
 
-The release archive is built for the root of a domain (`https://blender.example.org/`). For a sub-folder, build it
-yourself with `BASE_PATH=/blender npm run build`. The server must:
+Copy the release archive's `trimix-blender/` folder (or your own `build/`) into **any folder** of any web server and
+open that folder's URL: `https://example.org/`, `https://example.org/tools/blender/`… The folder is chosen after the
+build, with no rewrite rule and no configuration. The browser tests do exactly this with `/any/deep/folder/`.
 
-- serve `index.html` for any unknown path (single-page app). With nginx:
-  `try_files $uri $uri/index.html /index.html;`
-- send `Cache-Control: no-cache` for `index.html`, `service-worker.js` and `manifest.webmanifest`, or users stay on an
-  old version. Files under `_app/immutable/` can be cached forever.
+The server needs nothing special, but:
+
+- send `Cache-Control: no-cache` (or a short cache) for `index.html`, `service-worker.js` and `manifest.webmanifest`,
+  or users stay on an old version. Files under `_app/immutable/` can be cached forever.
 - use HTTPS (or `localhost`): browsers allow a service worker, and so offline use, only there.
 
 The `.gz` and `.br` files next to each file are precompressed copies, for servers that can serve them (nginx

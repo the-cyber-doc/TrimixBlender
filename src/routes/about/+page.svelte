@@ -9,7 +9,7 @@
 		LICENSE_URL,
 		versionLabel
 	} from '#lib/about.js';
-	import { url } from '#lib/base.js';
+	import { asset } from '#lib/base.js';
 	import { Z_MAX_ERROR } from '#lib/compressibility-coefficients.js';
 	import { REFERENCES } from '#lib/references.js';
 
@@ -23,7 +23,7 @@
 	<div class="card about">
 		<h1>About</h1>
 		<p class="app">
-			<img src={url('/favicon.svg')} alt="" width="48" height="48" />
+			<img src={asset('/favicon.svg')} alt="" width="48" height="48" />
 			<span>Trimix Blender</span>
 		</p>
 		<p>
