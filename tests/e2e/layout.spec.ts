@@ -4,7 +4,7 @@ const section = (page: import('@playwright/test').Page, title: string) =>
 	page.locator('section.area').filter({ has: page.getByRole('heading', { name: title }) });
 
 test('areas collapse with their arrow only, and expand with a click anywhere', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 	const gases = section(page, 'Available gases');
 	// Expanded: a click in the content does not collapse it.
 	await gases.getByText('Check the gases').click();
@@ -22,7 +22,7 @@ test('areas collapse with their arrow only, and expand with a click anywhere', a
 });
 
 test('the menu at the top right opens About and Preferences', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 	const menu = page.getByRole('button', { name: 'Menu' });
 	const box = await menu.boundingBox();
 	expect(box!.x + box!.width).toBeGreaterThan((page.viewportSize()!.width * 3) / 4);
@@ -43,7 +43,7 @@ test('the menu at the top right opens About and Preferences', async ({ page }) =
 });
 
 test('the page fits narrow screens', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 	const width = await page.evaluate(() => document.documentElement.scrollWidth);
 	expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
 	await expect(page.getByTestId('bottle-top')).toBeVisible();
@@ -62,7 +62,7 @@ async function bottleBottoms(page: import('@playwright/test').Page) {
 }
 
 test('the bottles stand on one line, whatever their captions and legends', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 	await page.getByLabel('Trimix').check();
 	for (const [id, v] of [
 		['target-o2', '21'],
@@ -95,7 +95,7 @@ test('the bottles stand on one line, whatever their captions and legends', async
 });
 
 test('the filling temperature sits next to its checkbox on desktop, below it on phones', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 	await page.getByTestId('compensate').check();
 	const box = (await page.getByTestId('compensate').boundingBox())!;
 	const field = (await page.getByTestId('temperature').boundingBox())!;

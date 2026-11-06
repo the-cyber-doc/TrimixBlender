@@ -8,7 +8,7 @@ async function type(page: Page, testid: string, value: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await page.goto('./');
 });
 
 test('nitrox: %O2, MOD and PPO2 are linked', async ({ page }) => {
@@ -108,7 +108,7 @@ test('temperature compensation, units from the preferences, kept after a reload'
 	await page.getByLabel('psi').check();
 	await page.getByLabel('cu ft').check();
 	await page.getByLabel('ft', { exact: true }).check();
-	await page.goto('/');
+	await page.goto('./');
 	await expect(page.getByTestId('target-pressure')).toHaveValue('2901');
 	await expect(page.getByTestId('mod')).toHaveValue('111');
 	await expect(page.getByTestId('volume')).toHaveValue('0.42');
@@ -156,14 +156,14 @@ test('gas density ceilings follow the depth unit', async ({ page }) => {
 	await page.getByRole('button', { name: 'Menu' }).click();
 	await page.getByRole('menuitem', { name: 'Preferences' }).click();
 	await page.getByLabel('ft', { exact: true }).check();
-	await page.goto('/');
+	await page.goto('./');
 	const limits = page.getByTestId('density-limits');
 	await expect(limits).toContainText(/down to \d+ ft/);
 	await expect(limits).toContainText(/6\.2 g\/l at \d+ ft/);
 });
 
 test('the About page cites the gas density sources', async ({ page }) => {
-	await page.goto('/about');
+	await page.goto('about');
 	await expect(page.getByText('Anthony, G. & Mitchell, S.J. (2016)')).toBeVisible();
 	await expect(page.getByText('Warkander, D.E.')).toBeVisible();
 	await expect(page.getByText('Doolette, D.J. & Mitchell, S.J. (2011)')).toBeVisible();

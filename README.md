@@ -76,11 +76,62 @@ as UID 10001 and works with a read-only root filesystem (it writes only to `/tmp
 Images: run `docker login dhi.io` first.
 
 ```sh
-docker compose up -d --build                                    # http://127.0.0.1:8080/
-docker build -t trimix-blender --build-arg BASE_PATH=/blender . # served under /blender/
-E2E_BASE_URL=http://localhost:8080 npx playwright test          # browser tests against the container
+tools/docker-dev.sh                       # build from this checkout and run: http://127.0.0.1:8080/ (Ctrl+C stops)
+tools/docker-dev.sh up -d --build         # any docker compose arguments: up -d, logs -f, down…
+BASE_PATH=/blender tools/docker-dev.sh    # served under /blender/
+docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp <user>/trimix-blender:latest  # a released image
 ```
+
+All the browser tests against the real container (as `tools/test-e2e-stack.sh` in VideoNinja). It runs a throwaway
+compose project on port 8090 (`E2E_PORT`), which is removed at the end:
+
+```sh
+tools/test-e2e-stack.sh                                   # the image built from this checkout
+tools/test-e2e-stack.sh --base-path /blender              # built for, and tested under, /blender/
+tools/test-e2e-stack.sh --images user/trimix-blender:1.2.3   # a published release, pulled
+tools/test-e2e-stack.sh -- -g "offline"                   # Playwright arguments after --
+```
+
+Both scripts use `sudo docker` by themselves when your user cannot reach Docker. The tests use paths relative to the
+base URL (`./`, `about`), so the same tests run at the root and under a base path.
 
 The build runs the unit tests first. Point the proxy's health check at `/health`. `index.html`, `service-worker.js`
 and the manifest are always revalidated (`Cache-Control: no-cache`); hashed files under `_app/immutable/` are cached
 forever. This is how a new version reaches users and triggers the reload banner.
+
+## CI and releases
+
+`.github/workflows/ci-cd.yml`, as in VideoNinja. Every push and pull request runs:
+
+1. the type checks, lint, unit tests (100 % coverage), the build and the browser tests;
+2. the Docker image for `linux/amd64` and `linux/arm64`, built but not published.
+
+Pushing a version tag also publishes the release:
+
+```sh
+git tag v1.2.3 && git push origin v1.2.3
+```
+
+- **Docker Hub:** `<user>/trimix-blender` with the tags `1.2.3`, `1.2`, `1` and `latest`. One multi-architecture
+  image (amd64 + arm64), with its SBOM and build provenance.
+- **GitHub release `v1.2.3`:**
+  - `trimix-blender-1.2.3-web.tar.gz` and `.zip`: the static build in a `trimix-blender/` folder, to serve as is.
+  - `SHA256SUMS`.
+  - Release notes with links to the Docker images (Docker Hub tag page, `docker pull` by tag and by digest).
+
+Repository secrets: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. The same account pulls the `dhi.io` base images.
+Dependabot needs these as Dependabot secrets too.
+
+### Serving the web build with another web server
+
+The release archive is built for the root of a domain (`https://blender.example.org/`). For a sub-folder, build it
+yourself with `BASE_PATH=/blender npm run build`. The server must:
+
+- serve `index.html` for any unknown path (single-page app). With nginx:
+  `try_files $uri $uri/index.html /index.html;`
+- send `Cache-Control: no-cache` for `index.html`, `service-worker.js` and `manifest.webmanifest`, or users stay on an
+  old version. Files under `_app/immutable/` can be cached forever.
+- use HTTPS (or `localhost`): browsers allow a service worker, and so offline use, only there.
+
+The `.gz` and `.br` files next to each file are precompressed copies, for servers that can serve them (nginx
+`gzip_static`). Other servers ignore them.

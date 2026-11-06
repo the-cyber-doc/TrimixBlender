@@ -1,0 +1,31 @@
+# New versions of what the app is built from, as pull requests (CI tests each one).
+# cooldown: a release is proposed only once it is two weeks old.
+version: 2
+
+registries:
+  # Docker Hardened Images: set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN as Dependabot secrets too.
+  dhi:
+    type: docker-registry
+    url: dhi.io
+    username: ${{secrets.DOCKERHUB_USERNAME}}
+    password: ${{secrets.DOCKERHUB_TOKEN}}
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      npm-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    registries: [dhi]
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }

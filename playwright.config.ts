@@ -5,15 +5,16 @@ import { defineConfig, devices } from '@playwright/test';
 // (offline, update banner).
 // Not 4173 (`npm run preview`'s default): a preview started by hand would be taken for the test build.
 const PORT = 4183;
-// The Docker image instead (e.g. E2E_BASE_URL=http://localhost:18080): no server of our own.
-const EXTERNAL = process.env.E2E_BASE_URL;
+// The Docker image instead (tools/test-e2e-stack.sh, e.g. E2E_BASE_URL=http://localhost:8090/blender/):
+// no server of our own. The tests use paths relative to it ('./', 'about'): they work under a base path.
+const EXTERNAL = process.env.E2E_BASE_URL?.replace(/\/?$/, '/');
 
 export default defineConfig({
 	testDir: 'tests',
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,
 	reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
-	use: { baseURL: EXTERNAL ?? `http://localhost:${PORT}`, trace: 'retain-on-failure' },
+	use: { baseURL: EXTERNAL ?? `http://localhost:${PORT}/`, trace: 'retain-on-failure' },
 	projects: [
 		{
 			name: 'chromium',

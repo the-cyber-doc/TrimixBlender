@@ -2,17 +2,17 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** Opens the app and waits until its service worker controls the page. */
 async function controlled(page: Page) {
-	await page.goto('/');
+	await page.goto('./');
 	await page.evaluate(() => navigator.serviceWorker.ready);
 	await page.reload();
 	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
 }
 
 test('installable: manifest and icons', async ({ page, request }) => {
-	await page.goto('/');
-	const manifest = await (await request.get('/manifest.webmanifest')).json();
+	await page.goto('./');
+	const manifest = await (await request.get('manifest.webmanifest')).json();
 	expect(manifest).toMatchObject({ name: 'Trimix Blender', start_url: './', display: 'standalone' });
-	for (const icon of manifest.icons) expect((await request.get(`/${icon.src}`)).ok()).toBe(true);
+	for (const icon of manifest.icons) expect((await request.get(icon.src)).ok()).toBe(true);
 });
 
 test('works offline after the first visit, on every page', async ({ page, context }) => {
@@ -20,9 +20,9 @@ test('works offline after the first visit, on every page', async ({ page, contex
 	await context.setOffline(true);
 	await page.reload();
 	await expect(page.getByTestId('sticker')).toBeVisible();
-	await page.goto('/about');
+	await page.goto('about');
 	await expect(page.getByRole('heading', { name: 'References' })).toBeVisible();
-	await page.goto('/preferences');
+	await page.goto('preferences');
 	await expect(page.getByRole('heading', { name: 'Preferences' })).toBeVisible();
 });
 

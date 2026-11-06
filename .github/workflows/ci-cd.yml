@@ -1,0 +1,289 @@
+name: CI/CD Pipeline
+
+# Every push (any branch) and every PR: type checks, lint, unit tests (100 % coverage),
+# the build, the browser tests, and the Docker image built for amd64 and arm64 (not
+# published). A version tag (v1.2.3) also:
+#   - publishes the image to Docker Hub, both architectures under one tag:
+#     <user>/trimix-blender:1.2.3, :1.2, :1 and :latest;
+#   - creates the GitHub release, with the web build attached (to serve as is with any
+#     web server) and the links to that release's images.
+# Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (Docker Hub, also for the dhi.io base images).
+# Actions pinned by commit (a tag can be moved), the version in a comment; Dependabot
+# updates them (.github/dependabot.yml).
+on:
+  push:
+    branches: ['**']
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  REGISTRY: docker.io
+  RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test & build
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '26' # as the Docker build stage (dhi.io/node:26)
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Lint and format (ESLint, Prettier)
+        run: npm run lint
+
+      # With coverage: below its floors (100 %, vite.config.ts) the step fails.
+      - name: Unit tests
+        run: npm run test:coverage
+
+      - name: Build
+        env:
+          # Shown on the About page: the release tag ("v" removed by the build), the commit.
+          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
+          APP_COMMIT: ${{ github.sha }}
+        run: npm run build
+
+      # The web build, attached to the release on a tag (job "release").
+      - name: Upload web build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: web-build
+          path: build
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium
+
+      # Pages, phone layout, offline service worker, update banner (playwright.config.ts,
+      # which builds the app again and serves it with `vite preview`).
+      - name: Browser tests
+        run: npm run test:browser
+
+      - name: Upload browser test report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+  build:
+    needs: test
+    name: Image (${{ matrix.platform }})
+    permissions:
+      contents: read
+
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    env:
+      # Secrets are not available to PRs from forks: fall back to a local name (never pushed).
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME || 'local' }}/trimix-blender
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Prepare platform pair
+        run: echo "PLATFORM_PAIR=${{ matrix.platform }}" | tr '/' '-' >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      # The base images come from Docker Hardened Images (dhi.io): pulling them needs a
+      # Docker account, on every build. Not available to pull requests from forks.
+      - name: Login to Docker Hardened Images
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        if: env.RELEASE == 'true'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (labels)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # Release: push by digest (tagged in merge-and-push). Otherwise: build only. The
+      # Dockerfile runs the unit tests again on each architecture before building.
+      - name: Build (and push by digest on release)
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ env.RELEASE == 'true' && github.ref_name || '' }}
+            APP_COMMIT=${{ github.sha }}
+          outputs: ${{ env.RELEASE == 'true' && format('type=image,name={0}/{1},push-by-digest=true,name-canonical=true,push=true', env.REGISTRY, env.IMAGE_NAME) || 'type=cacheonly' }}
+          cache-from: type=gha,scope=${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,scope=${{ env.PLATFORM_PAIR }},mode=max
+          # Releases: an SPDX SBOM and the SLSA build provenance, attached to the image.
+          sbom: ${{ env.RELEASE == 'true' }}
+          provenance: ${{ env.RELEASE == 'true' && 'mode=max' || 'false' }}
+
+      - name: Export digest
+        if: env.RELEASE == 'true'
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: env.RELEASE == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge-and-push:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Publish to Docker Hub
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/trimix-blender
+    # (No image name here: an output holding a secret, the user name, is dropped by GitHub.)
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      digest: ${{ steps.inspect.outputs.digest }}
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # v1.2.3 -> 1.2.3, 1.2, 1, latest
+      - name: Extract metadata (tags)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          flavor: |
+            latest=auto
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+      # The multi-architecture image's digest, for the release notes (pull by digest).
+      - name: Inspect image
+        id: inspect
+        run: |
+          ref="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
+          docker buildx imagetools inspect "$ref"
+          echo "digest=$(docker buildx imagetools inspect "$ref" --format '{{ json .Manifest }}' | jq -r .digest)" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: [test, merge-and-push]
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: GitHub release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and upload its files
+
+    steps:
+      - name: Download web build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: web-build
+          path: trimix-blender
+
+      # The static site, to serve as is from the root of any web server (single-page app:
+      # unknown paths must serve index.html; see the README). Archives and their checksums.
+      - name: Package the web build
+        env:
+          VERSION: ${{ needs.merge-and-push.outputs.version }}
+        run: |
+          name="trimix-blender-${VERSION}-web"
+          tar -czf "$name.tar.gz" trimix-blender
+          zip -qr "$name.zip" trimix-blender
+          sha256sum "$name.tar.gz" "$name.zip" > SHA256SUMS
+
+      - name: Release notes
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/trimix-blender
+          VERSION: ${{ needs.merge-and-push.outputs.version }}
+          DIGEST: ${{ needs.merge-and-push.outputs.digest }}
+        run: |
+          cat > notes.md <<NOTES
+          ## Docker image (linux/amd64, linux/arm64)
+
+          - Docker Hub: https://hub.docker.com/r/${IMAGE}/tags?name=${VERSION}
+          - \`docker pull ${IMAGE}:${VERSION}\`
+          - By digest: \`docker pull ${IMAGE}@${DIGEST}\`
+
+          Plain HTTP on port 8080, for your TLS reverse proxy (see the README).
+
+          ## Web build
+
+          \`trimix-blender-${VERSION}-web.tar.gz\` / \`.zip\` (folder \`trimix-blender/\`): the static app, to serve as is
+          from the root of any web server, with \`index.html\` for unknown paths (single-page app).
+          Checksums in \`SHA256SUMS\`.
+          NOTES
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.merge-and-push.outputs.version }}
+        run: |
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Trimix Blender $VERSION" \
+            --notes-file notes.md --generate-notes \
+            "trimix-blender-${VERSION}-web.tar.gz" "trimix-blender-${VERSION}-web.zip" SHA256SUMS

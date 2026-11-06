@@ -12,4 +12,7 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
 - Gas colours (`src/lib/bottle.ts`) and the sticker are fixed in both themes; everything else uses `src/app.css` tokens.
 - Chemical names are plain text: O2, N2, PPO2, PPHe, PPN2, never subscripts.
 - Node 26 is under fnm: `export PATH=~/.local/share/fnm/node-versions/v26.12.1/installation/bin:$PATH`.
-- Before finishing: `npm run check && npm run lint && npm run test:coverage && npx playwright test`.
+- Before finishing: `npm run check && npm run lint && npm run test:coverage && npx playwright test`;
+  for Docker changes also `tools/test-e2e-stack.sh` (and `--base-path /blender`).
+- Browser tests navigate with relative paths (`page.goto('./')`, `'about'`), never `'/…'`: they also run under a base path.
+- CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives + image links).
