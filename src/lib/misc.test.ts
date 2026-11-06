@@ -25,4 +25,10 @@ describe('build constants', () => {
 		expect(layout.ssr).toBe(false);
 		vi.unstubAllGlobals();
 	});
+
+	it('shows a release by its version, any other build as dev with its ID', async () => {
+		const { versionLabel } = await import('./about');
+		expect(versionLabel('1.2.3', 'abc1234')).toBe('1.2.3');
+		expect(versionLabel('dev', 'abc1234-dirty')).toBe('dev (build abc1234-dirty)');
+	});
 });

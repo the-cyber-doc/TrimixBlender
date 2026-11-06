@@ -99,6 +99,18 @@ The build runs the unit tests first. Point the proxy's health check at `/health`
 and the manifest are always revalidated (`Cache-Control: no-cache`); hashed files under `_app/immutable/` are cached
 forever. This is how a new version reaches users and triggers the reload banner.
 
+## Version shown on the About page
+
+At build time (`vite.config.ts`), the version comes from git:
+
+- A clean checkout of a tag `v1.2.3` shows **1.2.3**. Release builds, in CI and in the release's image and archives,
+  get it this way.
+- Any other build shows **dev (build <id>)**. The id is the commit (`abc1234`, `abc1234-dirty` with uncommitted
+  changes), or the build time (`20261106T1435`) when there is no git at all.
+
+The Docker image's build has no `.git`, so `tools/docker-dev.sh`, `tools/test-e2e-stack.sh` and the CI pass the version
+and commit as the `APP_VERSION` and `APP_COMMIT` build arguments.
+
 ## CI and releases
 
 `.github/workflows/ci-cd.yml`, as in VideoNinja. Every push and pull request runs:

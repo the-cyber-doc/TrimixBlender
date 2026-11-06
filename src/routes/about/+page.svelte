@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { APP_BUILD, APP_VERSION, BUILD_DATE } from '#lib/about.js';
+	import { APP_BUILD, APP_VERSION, BUILD_DATE, versionLabel } from '#lib/about.js';
 	import { Z_MAX_ERROR } from '#lib/compressibility-coefficients.js';
 	import { REFERENCES } from '#lib/references.js';
 </script>
@@ -19,7 +19,7 @@
 		</p>
 		<dl class="numbers">
 			<dt>Version</dt>
-			<dd data-testid="version">{APP_VERSION} ({APP_BUILD})</dd>
+			<dd data-testid="version">{versionLabel(APP_VERSION, APP_BUILD)}</dd>
 			<dt>Built</dt>
 			<dd>{new Date(BUILD_DATE).toLocaleString()}</dd>
 		</dl>

@@ -15,10 +15,16 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 sudo=()
 docker info >/dev/null 2>&1 || sudo=(sudo)
 
-# Shown on the About page (no .git in the image's build context).
-commit=$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)
-[[ -z $(git -C "$root" status --porcelain 2>/dev/null) ]] || commit+=-dirty
+# Shown on the About page (no .git in the image's build context): version and commit.
+commit=$(git -C "$root" rev-parse --short HEAD 2>/dev/null || true) # none: the build time (vite.config.ts)
+version=""
+if [[ -z $(git -C "$root" status --porcelain 2>/dev/null) ]]; then
+	# A clean checkout of a tag: that release's version; else "dev" (vite.config.ts).
+	version=$(git -C "$root" describe --tags --exact-match 2>/dev/null || true)
+elif [[ -n $commit ]]; then
+	commit+=-dirty
+fi
 
 (($#)) || set -- up --build
-exec "${sudo[@]}" env APP_COMMIT="$commit" BASE_PATH="${BASE_PATH:-}" BLENDER_PORT="${BLENDER_PORT:-8080}" \
+exec "${sudo[@]}" env APP_VERSION="$version" APP_COMMIT="$commit" BASE_PATH="${BASE_PATH:-}" BLENDER_PORT="${BLENDER_PORT:-8080}" \
 	docker compose -f "$root/docker-compose.yaml" "$@"

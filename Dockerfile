@@ -11,7 +11,7 @@ FROM dhi.io/node:26.13.0-alpine3.24-dev AS build
 USER root
 ARG BASE_PATH=
 ARG APP_VERSION=
-ARG APP_COMMIT=unknown
+ARG APP_COMMIT=
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

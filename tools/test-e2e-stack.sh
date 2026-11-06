@@ -50,9 +50,17 @@ else
 	printf 'services:\n  blender:\n    image: trimix-blender:e2e\n' > "$work/override.yaml"
 fi
 
+# Shown on the About page, as tools/docker-dev.sh: the tag of a clean checkout, else dev.
+commit=$(git -C "$root" rev-parse --short HEAD 2>/dev/null || true) # none: the build time (vite.config.ts)
+version=""
+if [[ -z $(git -C "$root" status --porcelain 2>/dev/null) ]]; then
+	version=$(git -C "$root" describe --tags --exact-match 2>/dev/null || true)
+elif [[ -n $commit ]]; then
+	commit+=-dirty
+fi
+
 run_compose() {
-	"${sudo[@]}" env BLENDER_PORT="$port" BASE_PATH="$base_path" \
-		APP_COMMIT="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)" \
+	"${sudo[@]}" env BLENDER_PORT="$port" BASE_PATH="$base_path" APP_VERSION="$version" APP_COMMIT="$commit" \
 		docker compose -p blender-e2e -f "$root/docker-compose.yaml" -f "$work/override.yaml" "$@"
 }
 

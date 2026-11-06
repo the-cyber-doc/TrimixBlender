@@ -164,6 +164,8 @@ test('gas density ceilings follow the depth unit', async ({ page }) => {
 
 test('the About page cites the gas density sources', async ({ page }) => {
 	await page.goto('about');
+	// A release build (its git tag) shows its version; any other build "dev" and its ID.
+	await expect(page.getByTestId('version')).toHaveText(/^(\d+\.\d+\.\d+\S*|dev \(build \S+\))$/);
 	await expect(page.getByText('Anthony, G. & Mitchell, S.J. (2016)')).toBeVisible();
 	await expect(page.getByText('Warkander, D.E.')).toBeVisible();
 	await expect(page.getByText('Doolette, D.J. & Mitchell, S.J. (2011)')).toBeVisible();
