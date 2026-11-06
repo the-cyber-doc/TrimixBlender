@@ -27,6 +27,16 @@ import {
 	BAR_PER_PSI,
 	LITRES_PER_CUBIC_FOOT
 } from './formulas';
+import {
+	DENSITY_LIMITS,
+	DENSITY_TEMPERATURE,
+	MOLAR_MASS,
+	ambientInBar,
+	gasDensity,
+	heliumForDensity,
+	molarMass,
+	pressureForDensity
+} from './formulas';
 import { readFileSync } from 'node:fs';
 
 const T15 = REFERENCE_TEMPERATURE;
@@ -201,5 +211,84 @@ describe('units', () => {
 		expect(kelvinToFahrenheit(celsiusToKelvin(15))).toBeCloseTo(59, 12);
 		expect(kelvinToFahrenheit(celsiusToKelvin(-40))).toBeCloseTo(-40, 12);
 		expect(fahrenheitToKelvin(212)).toBeCloseTo(373.15, 12);
+	});
+});
+
+describe('gas density', () => {
+	const T0 = DENSITY_TEMPERATURE;
+	const atDepth = (
+		mix: { o2: number; he: number },
+		depth: number,
+		unit: 'm' | 'ft',
+		model: 'real' | 'ideal' = 'ideal'
+	) => gasDensity(mix, ambientInBar(ambientFromDepth(depth, unit), unit), T0, model);
+
+	it('uses the IUPAC molar masses', () => {
+		expect(MOLAR_MASS).toEqual({ O2: 31.998, N2: 28.014, He: 4.0026 });
+		expect(molarMass(AIR)).toBeCloseTo(28.851, 3);
+		expect(molarMass({ o2: 0, he: 1 })).toBe(4.0026);
+		expect(molarMass({ o2: 0.21, he: 0.35 })).toBeCloseTo(20.4467, 4);
+	});
+
+	it('gives air 1.29 g/l at 1 atm and 0 °C, as the literature (1.293 g/l with argon)', () => {
+		const air = gasDensity(AIR, ATMOSPHERE, T0, 'ideal');
+		expect(air).toBeCloseTo(1.287, 3);
+		// Within 0.5 %: the 21/79 convention counts argon (heavier) as nitrogen.
+		expect(Math.abs(air - 1.293) / 1.293).toBeLessThan(0.005);
+	});
+
+	it("matches DAN's example: EAN32 at 110 fsw ≈ 5.6 g/l", () => {
+		expect(atDepth({ o2: 0.32, he: 0 }, 110, 'ft')).toBeCloseTo(5.66, 2);
+	});
+
+	it('scales with the absolute pressure: air at 4 atm ≈ 1.293 × 4 = 5.17 g/l', () => {
+		expect(atDepth(AIR, 99, 'ft') / gasDensity(AIR, ATMOSPHERE, T0, 'ideal')).toBeCloseTo(4, 12);
+	});
+
+	it('is lower with helium', () => {
+		expect(atDepth({ o2: 0.21, he: 0.35 }, 60, 'm')).toBeCloseTo(6.302, 3);
+		expect(atDepth({ o2: 0.21, he: 0.35 }, 60, 'm')).toBeLessThan(atDepth(AIR, 60, 'm'));
+	});
+
+	it('barely changes with real gases at depth (Z within 1 % of 1)', () => {
+		const ideal = atDepth({ o2: 0.18, he: 0.45 }, 90, 'm');
+		const real = atDepth({ o2: 0.18, he: 0.45 }, 90, 'm', 'real');
+		expect(Math.abs(real - ideal) / ideal).toBeLessThan(0.01);
+		expect(real).not.toBe(ideal);
+	});
+
+	it('puts the ceilings for air at about 31 m and 39 m', () => {
+		const at = (density: number) => depthFromAmbient(pressureForDensity(density, AIR, T0, 'ideal'), 'm');
+		expect(DENSITY_LIMITS).toEqual({ recommended: 5.2, maximum: 6.2 });
+		expect(at(5.2)).toBeCloseTo(30.93, 2);
+		expect(at(6.2)).toBeCloseTo(38.81, 2);
+	});
+
+	it('inverts the density for real gases', () => {
+		for (const mix of [AIR, { o2: 0.1, he: 0.7 }, { o2: 0.5, he: 0 }]) {
+			const p = pressureForDensity(6.2, mix, T0, 'real');
+			expect(gasDensity(mix, p, T0, 'real')).toBeCloseTo(6.2, 10);
+		}
+	});
+
+	it('gives the helium for a wanted density (He replaces N2)', () => {
+		// 21 % O2 at 7 bar, 5.2 g/l: M = 5.2 × R × 273.15 / 7 = 16.871 g/mol
+		// ⇒ fHe = (0.21 × 31.998 + 0.79 × 28.014 − 16.871) / (28.014 − 4.0026) = 0.4990.
+		expect(heliumForDensity(5.2, 7, 0.21, T0, 'ideal')).toBeCloseTo(0.499, 3);
+		for (const model of ['ideal', 'real'] as const) {
+			for (const [o2, he, p] of [
+				[0.21, 0.35, 7],
+				[0.1, 0.7, 16],
+				[0.32, 0, 4.4]
+			]) {
+				const density = gasDensity({ o2, he }, p, T0, model);
+				expect(heliumForDensity(density, p, o2, T0, model)).toBeCloseTo(he, 10);
+			}
+		}
+	});
+
+	it('converts ambient atm to bar for feet', () => {
+		expect(ambientInBar(4, 'm')).toBe(4);
+		expect(ambientInBar(4, 'ft')).toBeCloseTo(4.053, 12);
 	});
 });

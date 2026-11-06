@@ -96,6 +96,9 @@ export function depthQuantity(p: Preferences): Quantity {
 /** A fraction as a percentage (0.32 → 32). */
 export const PERCENT: Quantity = { toDisplay: (f) => f * 100, fromDisplay: (v) => v / 100, unit: '%', decimals: 1 };
 
+/** A gas density, g/l (the literature's unit, whatever the preferences). */
+export const DENSITY: Quantity = { toDisplay: (v) => v, fromDisplay: (v) => v, unit: 'g/l', decimals: 2 };
+
 /** A partial pressure (bar or ata, as the PPO2 limit). */
 export const PARTIAL_PRESSURE: Quantity = { toDisplay: (v) => v, fromDisplay: (v) => v, unit: '', decimals: 2 };
 

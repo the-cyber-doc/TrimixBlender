@@ -17,6 +17,9 @@ then top-up gas to add to a cylinder, and shows the four stages as cylinders and
   booster), so the blend picks the lowest-pressure bank that works, unless you choose one.
 - **Target mix**: Nitrox or Trimix, with an optional depth. The linked fields are %O2 ↔ MOD ↔ PPO2 (1.4 by default) and
   %He ↔ END. %N2 is shown.
+- **Gas density**: the mix's density at the target depth (at the MOD without a depth), with the depths where it
+  reaches the ceilings of Anthony & Mitchell (2016): 5.2 g/l recommended, 6.2 g/l absolute maximum. Above them, the
+  app warns. It computes ρ = P × M / (Z × R × T) at 0 °C, the basis of the published limits.
 - **Mix to do**:
   - Inputs: the cylinder's current mix, pressure and water volume; the target pressure; and optional temperature
     compensation.

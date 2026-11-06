@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { REFERENCE_TEMPERATURE, ambientFromDepth } from './formulas';
 import {
 	DEFAULT_PREFERENCES,
+	DENSITY,
 	PARTIAL_PRESSURE,
 	PERCENT,
 	depthQuantity,
@@ -31,6 +32,8 @@ describe('units', () => {
 		expect(format(depthQuantity(metric), ambientFromDepth(33.75, 'm'))).toBe('33.8 m');
 		expect(format(PERCENT, 0.32)).toBe('32 %');
 		expect(format(PARTIAL_PRESSURE, 1.4)).toBe('1.4');
+		expect(format(DENSITY, 6.3021)).toBe('6.3 g/l');
+		expect(DENSITY.fromDisplay(5.2)).toBe(5.2);
 		expect(format(PERCENT, 0.32, false)).toBe('32');
 	});
 

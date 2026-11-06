@@ -24,5 +24,7 @@ describe('messages', () => {
 	it('has a text for every warning and target problem', () => {
 		expect(Object.keys(WARNING_TEXT)).toEqual(['outside-fit']);
 		expect(Object.values(TARGET_TEXT).every((t) => t.length > 0)).toBe(true);
+		expect(TARGET_TEXT['density-recommended']).toContain('5.2 g/l');
+		expect(TARGET_TEXT['density-maximum']).toContain('6.2 g/l');
 	});
 });

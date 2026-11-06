@@ -10,6 +10,7 @@
 	import Sticker from './Sticker.svelte';
 	import { view } from './target';
 	import {
+		DENSITY,
 		PARTIAL_PRESSURE,
 		PERCENT,
 		depthQuantity,
@@ -23,7 +24,7 @@
 
 	const bar = $derived(pressureQuantity(preferences));
 	const depth = $derived(depthQuantity(preferences));
-	const target = $derived(view(app.target, preferences.o2Narcotic));
+	const target = $derived(view(app.target, preferences));
 	const used = $derived(app.gases.filter((g) => g.used));
 	const choices = $derived(candidates(used));
 	const trimix = $derived(app.target.kind === 'trimix');
@@ -145,12 +146,16 @@
 			<dd>{format(PARTIAL_PRESSURE, target.pp.n2)}</dd>
 		</div>
 		<div>
+			<dt>Density</dt>
+			<dd data-testid="reminder-density">{format(DENSITY, target.density.value)}</dd>
+		</div>
+		<div>
 			<dt>Gas when full</dt>
 			<dd data-testid="free-gas">{plan ? format(gasVolumeQuantity(preferences), plan.freeGas) : '–'}</dd>
 		</div>
 	</dl>
 	<p class="hint">
-		Partial pressures at {app.target.depth !== null
+		Partial pressures and density at {app.target.depth !== null
 			? `the target depth (${format(depth, app.target.depth)})`
 			: 'the MOD'}. Gas when full: free gas volume at 1 bar and 15 °C.
 	</p>

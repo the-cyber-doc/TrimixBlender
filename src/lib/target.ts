@@ -2,8 +2,23 @@
 // the PPO2 limit and the depth are stored; MOD and END are always derived from them,
 // and editing one of them changes the stored fraction instead. The formulas are in formulas.ts.
 
-import { endAmbient, heliumForEnd, modAmbient, n2Fraction, o2ForMod, partialPressure, type Mix } from './formulas';
+import {
+	DENSITY_LIMITS,
+	DENSITY_TEMPERATURE,
+	ambientInBar,
+	endAmbient,
+	gasDensity,
+	heliumForEnd,
+	modAmbient,
+	n2Fraction,
+	o2ForMod,
+	partialPressure,
+	pressureForDensity,
+	heliumForDensity,
+	type Mix
+} from './formulas';
 import type { BlendKind } from './blend';
+import type { Preferences } from './units';
 
 export interface Target {
 	kind: BlendKind;
@@ -21,7 +36,8 @@ export const DEFAULT_TARGET: Target = { kind: 'nitrox', o2: 0.32, he: 0, ppo2: 1
 /** The mix actually blended: no helium for nitrox. */
 export const targetMix = (t: Target): Mix => ({ o2: t.o2, he: t.kind === 'trimix' ? t.he : 0 });
 
-export type TargetProblem = 'o2' | 'he' | 'sum' | 'ppo2' | 'depth-beyond-mod' | 'hypoxic';
+export type TargetProblem =
+	'o2' | 'he' | 'sum' | 'ppo2' | 'depth-beyond-mod' | 'hypoxic' | 'density-recommended' | 'density-maximum';
 
 export interface TargetView {
 	mix: Mix;
@@ -33,6 +49,9 @@ export interface TargetView {
 	/** Where the partial pressures are given: the depth, else the MOD (ambient pressure). */
 	at: number;
 	pp: { o2: number; he: number; n2: number };
+	/** Gas density, g/L, at `at` (formulas.ts gasDensity), and the depths (ambient pressures) where
+	 * it reaches the recommended and maximum ceilings. */
+	density: { value: number; recommendedDepth: number; maximumDepth: number };
 	/** No blend with these. */
 	errors: TargetProblem[];
 	warnings: TargetProblem[];
@@ -42,7 +61,11 @@ export interface TargetView {
 /** Below this O2 fraction a mix cannot be breathed at the surface (hypoxic): a warning. [noaa-6] */
 export const HYPOXIC_O2 = 0.18;
 
-export function view(t: Target, o2Narcotic: boolean): TargetView {
+/** What the view depends on in the preferences. */
+export type ViewPreferences = Pick<Preferences, 'o2Narcotic' | 'depth' | 'model'>;
+
+export function view(t: Target, prefs: ViewPreferences): TargetView {
+	const { o2Narcotic } = prefs;
 	const mix = targetMix(t);
 	const n2 = n2Fraction(mix);
 	const mod = modAmbient(mix.o2, t.ppo2);
@@ -56,6 +79,18 @@ export function view(t: Target, o2Narcotic: boolean): TargetView {
 	const warnings: TargetProblem[] = [];
 	if (t.depth !== null && t.depth > mod + 1e-9) warnings.push('depth-beyond-mod');
 	if (mix.o2 < HYPOXIC_O2) warnings.push('hypoxic');
+	// Density: at the target depth when there is one (the warnings too), else at the MOD.
+	const densityAt = (ambient: number) =>
+		gasDensity(mix, ambientInBar(ambient, prefs.depth), DENSITY_TEMPERATURE, prefs.model);
+	const depthFor = (density: number) =>
+		pressureForDensity(density, mix, DENSITY_TEMPERATURE, prefs.model) / ambientInBar(1, prefs.depth);
+	const density = {
+		value: densityAt(at),
+		recommendedDepth: depthFor(DENSITY_LIMITS.recommended),
+		maximumDepth: depthFor(DENSITY_LIMITS.maximum)
+	};
+	if (t.depth !== null && density.value > DENSITY_LIMITS.maximum) warnings.push('density-maximum');
+	else if (t.depth !== null && density.value > DENSITY_LIMITS.recommended) warnings.push('density-recommended');
 	return {
 		mix,
 		n2,
@@ -63,6 +98,7 @@ export function view(t: Target, o2Narcotic: boolean): TargetView {
 		end,
 		at,
 		pp: { o2: partialPressure(mix.o2, at), he: partialPressure(mix.he, at), n2: partialPressure(n2, at) },
+		density,
 		errors,
 		warnings,
 		valid: errors.length === 0
@@ -88,6 +124,16 @@ export const setHe = (t: Target, he: number): Target => ({ ...t, he });
 /** END typed (ambient pressure): %He follows. Needs a depth (no END without one). */
 export const setEnd = (t: Target, end: number, o2Narcotic: boolean): Target =>
 	t.depth === null ? t : { ...t, he: heliumForEnd(end, t.depth, t.o2, o2Narcotic) };
+
+/** Gas density typed (g/l, at the target depth): %He follows, %O2 kept (formulas.ts heliumForDensity).
+ * Needs a depth, as the END. */
+export const setDensity = (t: Target, density: number, prefs: ViewPreferences): Target =>
+	t.depth === null
+		? t
+		: {
+				...t,
+				he: heliumForDensity(density, ambientInBar(t.depth, prefs.depth), t.o2, DENSITY_TEMPERATURE, prefs.model)
+			};
 
 export const setDepth = (t: Target, depth: number | null): Target => ({ ...t, depth });
 

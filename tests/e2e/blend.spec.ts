@@ -121,3 +121,80 @@ test('temperature compensation, units from the preferences, kept after a reload'
 	await expect(page.getByTestId('temperature')).toHaveValue('50');
 	await expect(page.getByTestId('sticker')).toContainText('psi');
 });
+
+test('gas density: at the MOD without a depth, with its ceilings', async ({ page }) => {
+	// EAN32 at its MOD (33.8 m): about 5.65 g/l; no warning without a target depth.
+	await expect(page.getByTestId('density-value')).toHaveText(/^5\.6\d? g\/l$/);
+	await expect(page.getByTestId('density')).toContainText('Gas density at the MOD (33.8 m)');
+	await expect(page.getByTestId('density-limits')).toContainText('Recommended ≤ 5.2 g/l down to');
+	await expect(page.getByTestId('density-limits')).toContainText('maximum 6.2 g/l at');
+	await expect(page.getByText('Gas density at the target depth is above')).toHaveCount(0);
+	await expect(page.getByTestId('reminder-density')).toHaveText(/^5\.6\d? g\/l$/);
+});
+
+test('gas density: warnings at the target depth, lower with more helium', async ({ page }) => {
+	await page.getByLabel('Trimix').check();
+	await type(page, 'depth', '60');
+	await type(page, 'target-o2', '21');
+	await type(page, 'target-he', '35');
+	// 21/35 at 60 m: 6.3 g/l, above the 6.2 maximum.
+	await expect(page.getByTestId('target-density')).toHaveValue(/^6\.3\d?$/);
+	await expect(page.getByText('above the 6.2 g/l absolute maximum')).toBeVisible();
+	await expect(page.getByTestId('reminder-density')).toHaveText(/^6\.3\d? g\/l$/);
+	// 40 % He: about 5.9 g/l, above the recommended 5.2 only.
+	await type(page, 'target-he', '40');
+	await expect(page.getByText('above the recommended 5.2 g/l')).toBeVisible();
+	await expect(page.getByText('above the 6.2 g/l absolute maximum')).toHaveCount(0);
+	// 55 % He: below both.
+	await type(page, 'target-he', '55');
+	await expect(page.getByText(/Gas density at the target depth is above/)).toHaveCount(0);
+});
+
+test('gas density ceilings follow the depth unit', async ({ page }) => {
+	await page.getByRole('button', { name: 'Menu' }).click();
+	await page.getByRole('menuitem', { name: 'Preferences' }).click();
+	await page.getByLabel('ft', { exact: true }).check();
+	await page.goto('/');
+	const limits = page.getByTestId('density-limits');
+	await expect(limits).toContainText(/down to \d+ ft/);
+	await expect(limits).toContainText(/6\.2 g\/l at \d+ ft/);
+});
+
+test('the About page cites the gas density sources', async ({ page }) => {
+	await page.goto('/about');
+	await expect(page.getByText('Anthony, G. & Mitchell, S.J. (2016)')).toBeVisible();
+	await expect(page.getByText('Warkander, D.E.')).toBeVisible();
+	await expect(page.getByText('Doolette, D.J. & Mitchell, S.J. (2011)')).toBeVisible();
+	await expect(page.getByText('Standard atomic weights of the elements 2021')).toBeVisible();
+});
+
+test('trimix: %He, END and gas density are linked', async ({ page }) => {
+	await page.getByLabel('Trimix').check();
+	// No depth: END and density disabled, the ceilings shown under the density.
+	await expect(page.getByTestId('target-density')).toBeDisabled();
+	await expect(page.getByTestId('target-density')).toHaveValue('');
+	const note = page.getByTestId('density-limits');
+	await expect(note).toContainText('Recommended ≤ 5.2 g/l down to');
+	await expect(note).not.toContainText('Anthony');
+	await type(page, 'depth', '60');
+	await type(page, 'target-o2', '21');
+	await expect(page.getByTestId('target-density')).toBeEnabled();
+	// He → END and density.
+	await type(page, 'target-he', '35');
+	await expect(page.getByTestId('end')).toHaveValue('35.5');
+	await expect(page.getByTestId('target-density')).toHaveValue(/^6\.3\d?$/);
+	// Density → He and END (O2 kept).
+	await type(page, 'target-density', '5.2');
+	await expect(page.getByTestId('target-he')).toHaveValue(/^(49\.\d|50(\.\d)?)$/);
+	await expect(page.getByTestId('end')).toHaveValue(/^2[45]\.\d$/);
+	await expect(page.getByTestId('target-o2')).toHaveValue('21');
+	await expect(page.getByTestId('target-density')).toHaveValue('5.2');
+	// END → He and density.
+	await type(page, 'end', '30');
+	await expect(page.getByTestId('target-he')).toHaveValue('42.9');
+	await expect(page.getByTestId('target-density')).toHaveValue(/^5\.7\d?$/);
+	// Removing the depth disables both again.
+	await type(page, 'depth', '');
+	await expect(page.getByTestId('target-density')).toBeDisabled();
+	await expect(page.getByTestId('end')).toBeDisabled();
+});

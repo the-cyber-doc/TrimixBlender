@@ -90,6 +90,39 @@ export const REFERENCES: readonly Reference[] = [
 			'Z_mix = Σ x_i Z_i at the same P and T), and the definition Z = PV / (nRT).'
 	},
 	{
+		id: 'anthony-mitchell-2016',
+		citation:
+			'Anthony, G. & Mitchell, S.J. (2016). Respiratory physiology of rebreather diving. In: Pollock, N.W., Sellers, S.H. & ' +
+			'Godfrey, J.M. (eds.), Rebreathers and Scientific Diving. Proceedings of NPS/NOAA/DAN/AAUS June 16–19, 2015 ' +
+			'Workshop. Durham, NC, pp. 66–79.',
+		usedFor:
+			'Gas density ceilings: 5.2 g/L recommended, 6.2 g/L absolute maximum, from the sharp rise in CO2 retention ' +
+			'above 6 g/L in rebreather test dives.'
+	},
+	{
+		id: 'warkander-1990',
+		citation:
+			'Warkander, D.E., Norfleet, W.T., Nagasawa, G.K. & Lundgren, C.E.G. (1990). CO2 retention with minimal symptoms ' +
+			'but severe dysfunction during wet simulated dives to 6.8 atm abs. Undersea Biomedical Research, 17(6), 515–523.',
+		usedFor: 'Evidence that dense gas (air at 6.8 atm, 8.8 g/L) causes CO2 retention with little warning.'
+	},
+	{
+		id: 'doolette-mitchell-2011',
+		citation:
+			'Doolette, D.J. & Mitchell, S.J. (2011). Hyperbaric conditions. Comprehensive Physiology, 1(1), 163–201. ' +
+			'doi:10.1002/cphy.c091004',
+		usedFor:
+			'Effects of gas density on breathing (airway resistance, work of breathing, CO2 retention); breathing-gas ' +
+			'densities tabulated at 0 °C and 1 atm, scaled with the absolute pressure at depth.'
+	},
+	{
+		id: 'iupac-2021',
+		citation:
+			'Prohaska, T. et al. (2022). Standard atomic weights of the elements 2021 (IUPAC Technical Report). ' +
+			'Pure and Applied Chemistry, 94(5), 573–600. doi:10.1515/pac-2019-0603',
+		usedFor: 'Molar masses: O2 31.998, N2 28.014, He 4.0026 g/mol (gas density).'
+	},
+	{
 		id: 'codata-2018',
 		citation:
 			'Tiesinga, E., Mohr, P.J., Newell, D.B. & Taylor, B.N. (2021). CODATA recommended values of the fundamental physical ' +

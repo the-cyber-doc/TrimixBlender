@@ -1,13 +1,14 @@
 <script lang="ts">
-	// Target mix: nitrox or trimix, depth, %O2 ↔ MOD ↔ PPO2, %He ↔ END, %N2.
+	// Target mix: nitrox or trimix, depth, %O2 ↔ MOD ↔ PPO2, %He ↔ END ↔ gas density, %N2.
 	import { app, preferences } from './app.svelte';
 	import NumberField from './NumberField.svelte';
 	import { TARGET_TEXT } from './messages';
-	import { setDepth, setEnd, setHe, setKind, setMod, setO2, setPpo2, view } from './target';
-	import { PARTIAL_PRESSURE, PERCENT, depthQuantity, format } from './units';
+	import { setDensity, setDepth, setEnd, setHe, setKind, setMod, setO2, setPpo2, view } from './target';
+	import { DENSITY_LIMITS } from './formulas';
+	import { DENSITY, PARTIAL_PRESSURE, PERCENT, depthQuantity, format } from './units';
 
 	const depth = $derived(depthQuantity(preferences));
-	const v = $derived(view(app.target, preferences.o2Narcotic));
+	const v = $derived(view(app.target, preferences));
 	const trimix = $derived(app.target.kind === 'trimix');
 	const update = (f: (t: typeof app.target) => typeof app.target) => (app.target = f(app.target));
 </script>
@@ -71,7 +72,7 @@
 </div>
 
 {#if trimix}
-	<div class="fields">
+	<div class="fields helium">
 		<NumberField
 			label="He"
 			quantity={PERCENT}
@@ -88,6 +89,18 @@
 			testid="end"
 			onchange={(end) => end !== null && update((t) => setEnd(t, end, preferences.o2Narcotic))}
 		/>
+		<div class="with-note">
+			<NumberField
+				label="Gas density"
+				quantity={DENSITY}
+				value={app.target.depth === null ? null : v.density.value}
+				disabled={app.target.depth === null}
+				placeholder="needs a depth"
+				testid="target-density"
+				onchange={(d) => d !== null && update((t) => setDensity(t, d, preferences))}
+			/>
+			{@render limits()}
+		</div>
 	</div>
 	<p class="hint">
 		END with {preferences.o2Narcotic ? 'O2 counted as narcotic' : 'N2 only as narcotic'} (Preferences).
@@ -95,6 +108,31 @@
 {/if}
 
 <p class="n2" data-testid="n2">N2: <strong class="numbers">{format(PERCENT, v.n2)}</strong></p>
+
+{#if !trimix}
+	<div class="density" data-testid="density">
+		<p>
+			Gas density at {app.target.depth !== null
+				? format(depth, app.target.depth)
+				: `the MOD (${format(depth, v.mod)})`}:
+			<strong class="numbers" data-testid="density-value">{format(DENSITY, v.density.value)}</strong>
+		</p>
+		{@render limits()}
+	</div>
+{/if}
+
+{#snippet limits()}
+	<p class="hint numbers" data-testid="density-limits">
+		<span class="line"
+			>Recommended ≤ <span class="nowrap">{format(DENSITY, DENSITY_LIMITS.recommended)}</span> down to
+			<span class="nowrap">{format(depth, v.density.recommendedDepth)}</span>;</span
+		>
+		<span class="line"
+			>maximum <span class="nowrap">{format(DENSITY, DENSITY_LIMITS.maximum)}</span> at
+			<span class="nowrap">{format(depth, v.density.maximumDepth)}</span>.</span
+		>
+	</p>
+{/snippet}
 
 {#each v.errors as problem (problem)}
 	<p class="message error" role="alert">{TARGET_TEXT[problem]}</p>
@@ -119,7 +157,30 @@
 		font-size: var(--text-label);
 	}
 
-	.n2 {
+	.n2,
+	.density p {
 		margin: 0;
+	}
+
+	/* The note under the density input: the inputs of the row stay aligned at the top. */
+	.helium {
+		align-items: start;
+	}
+
+	.with-note {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.with-note .hint {
+		margin: 0;
+	}
+
+	.line {
+		display: block;
+	}
+
+	.nowrap {
+		white-space: nowrap;
 	}
 </style>

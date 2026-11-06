@@ -254,6 +254,89 @@ export function solve2(A: readonly (readonly number[])[], b: readonly number[]):
 }
 
 // -------------------------------------------------------------------------------------
+// Gas density at depth
+// -------------------------------------------------------------------------------------
+//
+// Denser gas is harder to breathe: airway resistance and the work of breathing rise with
+// density, ventilation falls, and CO2 builds up (hypercapnia), which raises the risk of
+// narcosis, oxygen toxicity and loss of consciousness [doolette-mitchell-2011]. Divers in a
+// wet chamber at 6.8 ATA on air (8.8 g/L) retained CO2 with severe dysfunction and minimal
+// warning symptoms [warkander-1990]. In rebreather test dives, failures from CO2 retention
+// rose sharply above 6 g/L, hence the recommended ceilings [anthony-mitchell-2016]:
+//   - 5.2 g/L: recommended maximum (air at about 31 m / 100 ft)
+//   - 6.2 g/L: absolute maximum (air at about 39 m / 125 ft)
+//
+// Density of a gas (real-gas law, ρ = n·M / V):
+//     ρ = P × M_mix / (Z × R × T)                                  [poling-2001]
+// with M_mix = Σ x_i M_i the mix's molar mass [iupac-2021]. The literature tabulates densities
+// at 0 °C (air: 1.293 g/L at 1 atm) and scales them with the absolute pressure at depth
+// [doolette-mitchell-2011, anthony-mitchell-2016], so the ceilings above are on that basis:
+// the app uses T = 0 °C as well. (At these pressures, below 30 bar, Z is within 1 % of 1.)
+
+/** Molar masses, g/mol, from the IUPAC standard atomic weights (O 15.999, N 14.007, He 4.0026). [iupac-2021] */
+export const MOLAR_MASS = { O2: 31.998, N2: 28.014, He: 4.0026 } as const;
+
+/** Molar mass of a mix, g/mol: M = fO2 × M_O2 + fHe × M_He + fN2 × M_N2. Air (21/79): 28.85 g/mol. */
+export const molarMass = (mix: Mix): number =>
+	mix.o2 * MOLAR_MASS.O2 + mix.he * MOLAR_MASS.He + n2Fraction(mix) * MOLAR_MASS.N2;
+
+/** Temperature of the density figures: 0 °C, as the literature's tables and ceilings. [doolette-mitchell-2011] */
+export const DENSITY_TEMPERATURE = ZERO_CELSIUS;
+
+/** Recommended and absolute maximum density of a breathing gas at depth, g/L. [anthony-mitchell-2016] */
+export const DENSITY_LIMITS = { recommended: 5.2, maximum: 6.2 } as const;
+
+/** An ambient pressure (formulas above: bar for depths in metres, atm for feet) in bar. [nist-sp811] */
+export const ambientInBar = (ambient: number, unit: DepthUnit): number =>
+	unit === 'ft' ? ambient * ATMOSPHERE : ambient;
+
+/** Density of a mix, g/L, at an absolute pressure (bar) and temperature (K): ρ = P × M / (Z × R × T).
+ * (R in L·bar/(mol·K) and M in g/mol give g/L.) [poling-2001, iupac-2021] */
+export function gasDensity(mix: Mix, absolutePressure: number, temperature: number, model: GasModel): number {
+	return (absolutePressure * molarMass(mix)) / (mixZ(mix, absolutePressure, temperature, model) * R * temperature);
+}
+
+/** The absolute pressure (bar) at which a mix reaches a density: gasDensity solved for P,
+ * P = ρ × Z(P) × R × T / M. Z depends on P, so this iterates P ← ρ Z(P) R T / M from the ideal
+ * gas value; Z is within 1 % of 1 here, so each step gains about two digits. */
+export function pressureForDensity(density: number, mix: Mix, temperature: number, model: GasModel): number {
+	const ideal = (density * R * temperature) / molarMass(mix);
+	let p = ideal;
+	for (let step = 0; step < 50; step++) {
+		const next = ideal * mixZ(mix, p, temperature, model);
+		const done = Math.abs(next - p) < 1e-12;
+		p = next;
+		if (done) break;
+	}
+	return p;
+}
+
+/** The He fraction that gives a wanted density at an absolute pressure (bar), for a given O2 fraction:
+ * gasDensity solved for fHe. The molar mass the density needs is M = ρ × Z × R × T / P, and
+ *   M = fO2 × M_O2 + fHe × M_He + (1 − fO2 − fHe) × M_N2   (He replaces N2)
+ *   ⇒ fHe = (fO2 × M_O2 + (1 − fO2) × M_N2 − M) / (M_N2 − M_He).      [iupac-2021, poling-2001]
+ * Z depends on fHe: iterated from Z = 1 (it varies by less than 1 % at these pressures). */
+export function heliumForDensity(
+	density: number,
+	absolutePressure: number,
+	o2: number,
+	temperature: number,
+	model: GasModel
+): number {
+	const heliox = o2 * MOLAR_MASS.O2 + (1 - o2) * MOLAR_MASS.N2;
+	let he = 0;
+	for (let step = 0; step < 50; step++) {
+		const z = mixZ({ o2, he }, absolutePressure, temperature, model);
+		const needed = (density * z * R * temperature) / absolutePressure;
+		const next = (heliox - needed) / (MOLAR_MASS.N2 - MOLAR_MASS.He);
+		const done = Math.abs(next - he) < 1e-12;
+		he = next;
+		if (done) break;
+	}
+	return he;
+}
+
+// -------------------------------------------------------------------------------------
 // Unit conversions [nist-sp811]
 // -------------------------------------------------------------------------------------
 
