@@ -99,6 +99,134 @@ The build runs the unit tests first. Point the proxy's health check at `/health`
 and the manifest are always revalidated (`Cache-Control: no-cache`); hashed files under `_app/immutable/` are cached
 forever. This is how a new version reaches users and triggers the reload banner.
 
+## Deployment: Docker Compose behind an nginx proxy
+
+The container serves the app over plain HTTP on port 8080. Your reverse proxy adds HTTPS and your domain. HTTPS is
+required: without it, browsers refuse the service worker, so there is no offline use and no install.
+
+### docker-compose.yml
+
+The published image (see [CI and releases](#ci-and-releases)), served at the root of a (sub)domain:
+
+```yaml
+# /opt/trimix-blender/docker-compose.yml
+#   docker compose up -d                              start
+#   docker compose pull && docker compose up -d       update to the latest 1.x
+services:
+  trimix-blender:
+    image: thecyberdoc/trimix-blender:1 # updates within 1.x; or a fixed release: :1.2.3
+    container_name: trimix-blender
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8080:8080' # this host only: the proxy is the way in
+    # Nothing to keep: no volume. Read-only, it writes only to /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    # No healthcheck: the hardened image has no shell or HTTP client. Check GET /health
+    # (answers "ok") from your proxy or monitoring.
+```
+
+If nginx itself runs in a container, put both on one Docker network and remove `ports:`. Then proxy to
+`http://trimix-blender:8080` instead of `http://127.0.0.1:8080`.
+
+**Under a sub-folder** (`https://example.org/blender/`), the app must be built for it: the published image serves at
+the root only. Let Compose build the image from a release's sources (this needs `docker login dhi.io` first):
+
+```yaml
+services:
+  trimix-blender:
+    build:
+      context: https://github.com/the-cyber-doc/TrimixBlender.git#v1.2.3
+      args:
+        BASE_PATH: /blender
+        APP_VERSION: v1.2.3 # the About page: no .git in the build
+    image: trimix-blender:1.2.3-blender
+    # …then the same lines as above, from container_name: on
+```
+
+### nginx reverse proxy
+
+**On its own (sub)domain** (recommended): `https://blender.example.org/`.
+
+```nginx
+# /etc/nginx/sites-available/blender.example.org
+server {
+    listen 80;
+    listen [::]:80;
+    server_name blender.example.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;                      # nginx < 1.25.1: "listen 443 ssl http2;" instead
+    server_name blender.example.org;
+
+    ssl_certificate     /etc/letsencrypt/live/blender.example.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/blender.example.org/privkey.pem;
+
+    # HSTS: the proxy's to decide, not the app's. Add includeSubDomains only if every
+    # subdomain has HTTPS.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Connection        "";
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Overwrite, never append ($proxy_add_x_forwarded_for): the container logs this
+        # single value as the client's address (it trusts it from private addresses only).
+        proxy_set_header X-Forwarded-For   $remote_addr;
+    }
+}
+```
+
+**In a sub-folder** of an existing site: `https://example.org/blender/`, with the image built with
+`BASE_PATH=/blender` (above). Add these to the `server` block that already serves `https://example.org`:
+
+```nginx
+location = /blender {
+    return 301 /blender/;
+}
+
+location /blender/ {
+    # No URI after the address: /blender/… is forwarded unchanged (the container serves under /blender/).
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Connection        "";
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For   $remote_addr;
+}
+```
+
+In a sub-folder the app shares its origin with the rest of the site. Browsers isolate by origin, not by path, so the
+site's other pages could read the app's saved preferences and blend. These hold no secrets, but a subdomain keeps the
+app apart.
+
+Leave the container's response headers alone: no proxy caching, and no `add_header Cache-Control` or
+`Content-Security-Policy` of your own in these locations. The container sends the right ones:
+
+- `Cache-Control: no-cache` on `index.html`, `service-worker.js` and the manifest, so users get new versions and the
+  "reload" banner;
+- immutable caching on the hashed files;
+- a CSP and the other security headers.
+
+The precompressed `.gz` files pass through as they are.
+
+Check, then reload: `sudo nginx -t && sudo nginx -s reload`. Then, from outside:
+
+```sh
+curl -sI https://blender.example.org/ | grep -iE '^(HTTP|cache-control|strict-transport|content-security)'
+curl -s https://blender.example.org/health        # ok   (sub-folder: https://example.org/blender/health)
+```
+
 ## Version shown on the About page
 
 At build time (`vite.config.ts`), the version comes from git:
