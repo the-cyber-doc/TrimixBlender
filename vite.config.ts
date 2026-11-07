@@ -20,6 +20,11 @@ const dirty = git('status --porcelain') ? '-dirty' : '';
 const tag = dirty ? undefined : git('describe --tags --exact-match');
 const APP_VERSION = (process.env.APP_VERSION || tag || 'dev').replace(/^v/, '');
 const BUILD_DATE = new Date().toISOString();
+// `npm run build:native` (APP_TARGET=native): the web build inside the Android and iOS apps
+// (capacitor.config.ts), into build-native/. Its files ship in the app: no service worker
+// and no precompressed copies; otherwise the same app.
+const NATIVE = process.env.APP_TARGET === 'native';
+const OUT = NATIVE ? 'build-native' : 'build';
 const commit = process.env.APP_COMMIT;
 // The build's ID: its commit. A full SHA (CI) is shortened; "abc1234-dirty" (tools/docker-dev.sh)
 // is kept. Without git (a copy of the sources): the build's time, 20261106T1435.
@@ -34,7 +39,8 @@ export default defineConfig({
 	define: {
 		__APP_VERSION__: JSON.stringify(APP_VERSION),
 		__APP_BUILD__: JSON.stringify(APP_COMMIT),
-		__BUILD_DATE__: JSON.stringify(BUILD_DATE)
+		__BUILD_DATE__: JSON.stringify(BUILD_DATE),
+		__APP_NATIVE__: JSON.stringify(NATIVE)
 	},
 	plugins: [
 		sveltekit({
@@ -44,7 +50,7 @@ export default defineConfig({
 			},
 			// Static single page: no server at all, served from any folder of any web server
 			// (nginx in the image, with the .gz copies next to each file).
-			adapter: adapter({ pages: 'build', assets: 'build', precompress: true }),
+			adapter: adapter({ pages: OUT, assets: OUT, precompress: !NATIVE }),
 			// Registered by the app, in production builds only ($lib/pwa.ts).
 			serviceWorker: { register: false },
 			// Publishable in any folder, decided after the build: every URL is relative to the page

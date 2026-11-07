@@ -4,6 +4,9 @@
 export const APP_VERSION: string = __APP_VERSION__;
 export const APP_BUILD: string = __APP_BUILD__;
 export const BUILD_DATE: string = __BUILD_DATE__;
+/** The Android / iOS app (capacitor.config.ts): its files are inside the app, so no service
+ * worker and no update banner; a new version comes from the app's store. */
+export const NATIVE: boolean = __APP_NATIVE__;
 
 /** What the About page shows: the release's version (its git tag) for a release build,
  * else "dev" and the build's ID (its commit). */

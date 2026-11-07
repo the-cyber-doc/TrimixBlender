@@ -11,6 +11,8 @@ export default defineConfig(
 	globalIgnores([
 		'build/',
 		'build-*/',
+		'android/',
+		'ios/',
 		'.svelte-kit/',
 		'.svelte-kit-*/',
 		'coverage/',

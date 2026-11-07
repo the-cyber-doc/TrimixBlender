@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Before Android 12: the start-up window, the icon on the page's background. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/background" />
+    <item android:width="96dp" android:height="96dp" android:gravity="center" android:drawable="@mipmap/ic_launcher" />
+</layer-list>

@@ -6,8 +6,17 @@ name: CI/CD Pipeline
 #   - publishes the image to Docker Hub, both architectures under one tag:
 #     <user>/trimix-blender:1.2.3, :1.2, :1 and :latest;
 #   - creates the GitHub release, with the web build attached (to serve as is with any
-#     web server) and the links to that release's images.
+#     web server), the signed Android app (APK, and the AAB for Google Play), the signed iOS
+#     app (IPA, for App Store Connect / TestFlight), and the links to that release's images.
+# The Android and iOS apps (capacitor.config.ts) are built on every push too: the APK is
+# checked for permissions and trackers (none allowed: tools/check-android-apk.sh).
 # Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (Docker Hub, also for the dhi.io base images).
+# Signing the apps (see the README), required for a release, optional otherwise:
+#   Android: ANDROID_KEYSTORE_BASE64 (the .jks, base64), ANDROID_KEYSTORE_PASSWORD,
+#     ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Without them (not a release): unsigned.
+#   iOS: APPLE_TEAM_ID, APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID,
+#     APP_STORE_CONNECT_API_KEY_BASE64 (the .p8, base64): Xcode's automatic signing, its
+#     certificate and profile managed by Apple. Not a release: an unsigned build only.
 # Actions pinned by commit (a tag can be moved), the version in a comment; Dependabot
 # updates them (.github/dependabot.yml).
 on:
@@ -84,6 +93,190 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report
+          retention-days: 7
+
+  android:
+    needs: test
+    name: Android app
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '26'
+          cache: npm
+
+      # Capacitor 8 builds with Java 21. The Android SDK is on the runner ($ANDROID_HOME).
+      - name: Set up Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      # build-native/, copied into android/ (and ios/) by `cap sync`.
+      - name: Build the web app for the native apps
+        env:
+          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
+          APP_COMMIT: ${{ github.sha }}
+        run: npm run build:native
+
+      - name: Signing key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE" ]; then
+            echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          elif [ "$RELEASE" = true ]; then
+            echo "::error::A release needs the ANDROID_KEYSTORE_BASE64 secret (and its passwords): see the README."
+            exit 1
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret: the APK and AAB are unsigned (not a release)."
+          fi
+
+      # versionName and versionCode from the tag (android/app/build.gradle).
+      - name: Build the APK and the AAB
+        working-directory: android
+        env:
+          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - name: Collect the APK and the AAB
+        run: |
+          mkdir -p android-app
+          cp android/app/build/outputs/apk/release/*.apk android-app/trimix-blender.apk
+          cp android/app/build/outputs/bundle/release/*.aab android-app/trimix-blender.aab
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: No permission, no tracker
+        run: tools/check-android-apk.sh android-app/trimix-blender.apk
+
+      # Signed by Gradle (apksig, apksigner's library): checked with apksigner itself (APK
+      # signature schemes v1 to v3) and jarsigner (the AAB's signature, what Google Play reads).
+      - name: Verify the signatures
+        if: env.ANDROID_KEYSTORE_FILE != ''
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$apksigner" verify --verbose --print-certs android-app/trimix-blender.apk
+          # (Not -strict: an Android key's certificate is self-signed, which -strict rejects.)
+          jarsigner -verify android-app/trimix-blender.aab | grep -x 'jar verified.'
+
+      - name: Upload the Android app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: android-app
+          path: android-app
+          if-no-files-found: error
+          retention-days: 7
+
+  ios:
+    needs: test
+    name: iOS app
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the web app for the native apps
+        env:
+          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
+          APP_COMMIT: ${{ github.sha }}
+        run: npm run build:native
+
+      # Version: the tag; build number: the same as Android's versionCode (1.2.3 → 10203).
+      - name: Version
+        env:
+          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
+        run: |
+          version="${APP_VERSION#v}"
+          case "$version" in *.*.*) ;; *) version=0.0.0 ;; esac
+          IFS=. read -r major minor patch <<< "$version"
+          build=$((major * 10000 + minor * 100 + patch)); [ "$build" -gt 0 ] || build=1
+          echo "IOS_VERSION=$version" >> "$GITHUB_ENV"
+          echo "IOS_BUILD=$build" >> "$GITHUB_ENV"
+
+      # Not a release: unsigned, it proves the app builds.
+      - name: Build the app (unsigned)
+        if: env.RELEASE != 'true'
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/ios" \
+            CODE_SIGNING_ALLOWED=NO MARKETING_VERSION="$IOS_VERSION" CURRENT_PROJECT_VERSION="$IOS_BUILD" build
+          mkdir -p ios-app/Payload
+          cp -R "$RUNNER_TEMP/ios/Build/Products/Release-iphoneos/App.app" ios-app/Payload/
+          (cd ios-app && zip -qr trimix-blender-unsigned.ipa Payload && rm -rf Payload)
+
+      # A release: archived and exported signed for App Store Connect (TestFlight, the App
+      # Store). Automatic signing with the App Store Connect API key: Xcode gets the
+      # distribution certificate and the profile from Apple (cloud signing), no file to keep.
+      - name: Build and sign the app
+        if: env.RELEASE == 'true'
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          if [ -z "$TEAM_ID" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER_ID" ] || [ -z "$API_KEY" ]; then
+            echo "::error::A release needs APPLE_TEAM_ID and the APP_STORE_CONNECT_* secrets: see the README."
+            exit 1
+          fi
+          key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          echo "$API_KEY" | base64 -d > "$key"
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key"
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID")
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>destination</key><string>export</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/ios" \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" "${auth[@]}" \
+            DEVELOPMENT_TEAM="$TEAM_ID" MARKETING_VERSION="$IOS_VERSION" CURRENT_PROJECT_VERSION="$IOS_BUILD" archive
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${auth[@]}"
+          rm -f "$key"
+          mkdir -p ios-app
+          cp "$RUNNER_TEMP"/export/*.ipa ios-app/trimix-blender.ipa
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+
+      - name: Upload the iOS app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ios-app
+          path: ios-app
+          if-no-files-found: error
           retention-days: 7
 
   build:
@@ -231,7 +424,7 @@ jobs:
           echo "digest=$(docker buildx imagetools inspect "$ref" --format '{{ json .Manifest }}' | jq -r .digest)" >> "$GITHUB_OUTPUT"
 
   release:
-    needs: [test, merge-and-push]
+    needs: [test, android, ios, merge-and-push]
     if: startsWith(github.ref, 'refs/tags/v')
     name: GitHub release
     runs-on: ubuntu-latest
@@ -245,6 +438,18 @@ jobs:
           name: web-build
           path: trimix-blender
 
+      - name: Download the Android app
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: android-app
+          path: android-app
+
+      - name: Download the iOS app
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ios-app
+          path: ios-app
+
       # The static site, to copy as is into any folder of any web server (relative URLs, hash
       # routing: see the README). Archives and their checksums.
       - name: Package the web build
@@ -254,7 +459,11 @@ jobs:
           name="trimix-blender-${VERSION}-web"
           tar -czf "$name.tar.gz" trimix-blender
           zip -qr "$name.zip" trimix-blender
-          sha256sum "$name.tar.gz" "$name.zip" > SHA256SUMS
+          mv android-app/trimix-blender.apk "trimix-blender-${VERSION}.apk"
+          mv android-app/trimix-blender.aab "trimix-blender-${VERSION}.aab"
+          mv ios-app/trimix-blender.ipa "trimix-blender-${VERSION}.ipa"
+          sha256sum "$name.tar.gz" "$name.zip" trimix-blender-"${VERSION}".apk trimix-blender-"${VERSION}".aab \
+            trimix-blender-"${VERSION}".ipa > SHA256SUMS
 
       - name: Release notes
         env:
@@ -271,6 +480,13 @@ jobs:
 
           Plain HTTP on port 8080, for your TLS reverse proxy (see the README).
 
+          ## Android and iOS apps
+
+          Self-contained (the whole app is inside, it never uses the network), no permission, no tracker.
+
+          - \`trimix-blender-${VERSION}.apk\`: Android 7+, signed, to install directly. \`.aab\`: for Google Play.
+          - \`trimix-blender-${VERSION}.ipa\`: iOS 15+, signed for App Store Connect (TestFlight, the App Store).
+
           ## Web build
 
           \`trimix-blender-${VERSION}-web.tar.gz\` / \`.zip\` (folder \`trimix-blender/\`): the static app, to serve as is
@@ -286,4 +502,6 @@ jobs:
         run: |
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Trimix Blender $VERSION" \
             --notes-file notes.md --generate-notes \
-            "trimix-blender-${VERSION}-web.tar.gz" "trimix-blender-${VERSION}-web.zip" SHA256SUMS
+            "trimix-blender-${VERSION}-web.tar.gz" "trimix-blender-${VERSION}-web.zip" \
+            "trimix-blender-${VERSION}.apk" "trimix-blender-${VERSION}.aab" \
+            "trimix-blender-${VERSION}.ipa" SHA256SUMS

@@ -4,14 +4,15 @@ import { asset } from './base';
 
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
 
-/** Production builds only (SvelteKit's automatic registration is off, see vite.config.ts).
- * In development, removes a service worker left by an earlier production test instead. */
+/** Production web builds only (SvelteKit's automatic registration is off, see vite.config.ts).
+ * Otherwise (`off`: development, or the native app, which has its files already) removes a
+ * service worker left by an earlier production build instead. */
 export function registerServiceWorker(
-	dev: boolean,
+	off: boolean,
 	container: ServiceWorkerContainer | undefined = navigator.serviceWorker
 ) {
 	if (!container) return;
-	if (dev) {
+	if (off) {
 		container.getRegistrations().then((all) => all.forEach((registration) => registration.unregister()));
 	} else {
 		container

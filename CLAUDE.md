@@ -19,4 +19,9 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
 - Browser tests navigate with relative URLs (`page.goto('./')`, `'./#/about'`); every suite also runs from
   `/any/deep/folder/` (playwright.config.ts). Open a hash page as the first navigation of a test, not right after
   another page load (the app's start-up can overwrite the hash).
-- CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives + image links).
+- Native apps (Capacitor 8, `capacitor.config.ts`, `android/`, `ios/`): `npm run build:native` (APP_TARGET=native →
+  `build-native/`, `NATIVE` in `#lib/about.js`: no service worker). Hard rules: no permission (the Android manifest
+  removes them, `tools/check-android-apk.sh` checks the APK), no tracker / analytics / Google or Firebase SDK, no
+  network use. Android toolchain: JDK 21 + SDK 36.
+- CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
+  signed APK + AAB + IPA, image links); a release fails without the signing secrets (README, Signing).

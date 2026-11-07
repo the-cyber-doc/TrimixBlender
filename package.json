@@ -19,9 +19,11 @@
 		"format": "prettier --write . && eslint --fix .",
 		"icons": "node scripts/icons.js",
 		"nist:fetch": "sh scripts/fetch-nist.sh",
-		"nist:fit": "node scripts/fit-compressibility.js"
+		"nist:fit": "node scripts/fit-compressibility.js",
+		"build:native": "APP_TARGET=native vite build && APP_TARGET=native node scripts/relative-index.js && cap sync"
 	},
 	"devDependencies": {
+		"@capacitor/cli": "^8.6.0",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.64.1",
 		"@sveltejs/adapter-static": "^4.0.0",
@@ -45,5 +47,11 @@
 	},
 	"imports": {
 		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"@capacitor/android": "^8.6.0",
+		"@capacitor/app": "^8.1.2",
+		"@capacitor/core": "^8.6.0",
+		"@capacitor/ios": "^8.6.0"
 	}
 }

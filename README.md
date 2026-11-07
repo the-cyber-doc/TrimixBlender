@@ -68,6 +68,74 @@ Layout:
 | `src/lib/*.svelte`    | UI components (logic stays in `.ts`, unit-tested)                     |
 | `src/service-worker/` | Offline cache of the whole app                                        |
 | `tests/`              | Playwright browser tests                                              |
+| `android/`, `ios/`    | The native apps (Capacitor projects), see below                       |
+
+## Android and iOS apps
+
+The same app, packaged with [Capacitor](https://capacitorjs.com/) as a native app for each platform
+(`capacitor.config.ts`):
+
+- **Self-contained**: the whole web build is inside the app and served to the web view by the app itself. No server,
+  no download, no service worker; it works in flight mode from the first start.
+- **No permission**: the Android manifest removes every permission, `INTERNET` included, even any a library would add;
+  the iOS app has no usage description (camera, location…), so iOS never asks for anything.
+- **No tracker**: no analytics, crash reporting, ads, Firebase or Google Play services. Capacitor itself sends nothing.
+  The iOS privacy manifest (`ios/App/App/PrivacyInfo.xcprivacy`) declares no tracking and no data collected.
+- Links out of the app (source code, references) open in the system browser.
+
+`tools/check-android-apk.sh <file.apk>` checks a build: no permission, and none of the common tracker SDKs (the
+signatures of [Exodus Privacy](https://reports.exodus-privacy.eu.org/en/trackers/)) in its code. CI runs it on every
+build.
+
+```sh
+npm run build:native     # build-native/ (APP_TARGET=native), copied into android/ and ios/ (cap sync)
+npx cap open android     # Android Studio (JDK 21, Android SDK 36): Run, or Build > Generate Signed App Bundle / APK
+npx cap open ios         # Xcode (macOS): choose your team in Signing & Capabilities, then Run or Product > Archive
+npm run icons            # after changing static/favicon.svg: the PWA, Android and iOS icons and splash screens
+```
+
+From the command line, Android: `cd android && ./gradlew assembleRelease` (APK) or `bundleRelease` (AAB, for Google
+Play), then `tools/check-android-apk.sh app/build/outputs/apk/release/*.apk`.
+
+Versions: `APP_VERSION=v1.2.3` (as for the web build) gives version 1.2.3 and build number 10203
+(`major × 10000 + minor × 100 + patch`, which must grow with each store upload).
+
+### Signing
+
+A release (a `v*.*.*` tag) publishes signed apps only: CI fails if a signing secret is missing. Other builds are unsigned
+when the secrets are absent (Android: unsigned APK and AAB; iOS: an unsigned build, to prove it compiles).
+
+**Android.** The key is made once with `keytool`, part of every JDK (Fedora: `sudo dnf install
+java-21-openjdk-headless`; Android Studio has one in `jbr/bin/`): it creates the keystore, the private key and its
+certificate. The key is ECDSA on the P-521 curve (`secp521r1`), which the APK signature schemes v2 and v3 support on
+every Android version the app runs on (7+). Gradle then signs the APK (v2 and v3, with `apksig`, the library of
+`apksigner`) and the AAB (JAR signature, what Google Play reads); CI checks both with `apksigner verify` and
+`jarsigner -verify`. Keep the keystore and its password safe: every update must be signed with the same key. With Google
+Play App Signing, this key is your upload key and Google re-signs the app for the store; check that Play accepts an EC
+upload key before relying on it there.
+
+```sh
+keytool -genkeypair -v -keystore release.jks -storetype PKCS12 -alias trimix-blender \
+  -keyalg EC -groupname secp521r1 -sigalg SHA512withECDSA -validity 10000
+base64 -w0 release.jks   # the value of ANDROID_KEYSTORE_BASE64
+```
+
+GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`trimix-blender`),
+`ANDROID_KEY_PASSWORD` (a PKCS12 keystore has a single password: the same as the keystore's). To check an APK by hand:
+`apksigner verify --print-certs trimix-blender-1.2.3.apk` (build tools of the Android SDK).
+
+**iOS** (Apple Developer Program). CI archives the app and exports an `.ipa` signed for App Store Connect, with Xcode's
+automatic signing: Apple issues and renews the distribution certificate and the profile, no file to keep.
+
+1. In the Apple Developer site, register the app ID `com.dolphinslabs.trimixblender`; in App Store Connect, create
+   the app with it.
+2. App Store Connect > Users and Access > Integrations > App Store Connect API: create a team key with the **Admin**
+   role (needed for cloud-managed certificates) and download its `.p8` (once only).
+3. GitHub secrets: `APPLE_TEAM_ID` (Membership details), `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`
+   (both on the keys page), `APP_STORE_CONNECT_API_KEY_BASE64` (`base64 -i AuthKey_XXXX.p8`).
+
+The release's `.ipa` is uploaded to App Store Connect (Transporter, or `xcrun altool --upload-app`) for TestFlight and
+the App Store review. The app ID is the same on both platforms; it cannot change once the app is in a store.
 
 ## Docker
 

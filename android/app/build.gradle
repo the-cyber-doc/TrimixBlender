@@ -1,0 +1,70 @@
+apply plugin: 'com.android.application'
+
+// The version: the release's tag (APP_VERSION=v1.2.3, as the web build: vite.config.ts), else
+// 0.0.0 (a development build). versionCode, which must grow with every upload to a store:
+// 1.2.3 → 10203 (minor and patch below 100).
+def appVersion = (System.getenv('APP_VERSION') ?: '').replaceFirst(/^v/, '')
+if (!(appVersion ==~ /\d+\.\d+\.\d+/)) appVersion = '0.0.0'
+def (major, minor, patch) = appVersion.tokenize('.')*.toInteger()
+
+// Release signing, when the keystore is given (CI: secrets, see the README); otherwise the
+// release build is unsigned.
+def keystore = System.getenv('ANDROID_KEYSTORE_FILE')
+
+android {
+    namespace = "com.dolphinslabs.trimixblender"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.dolphinslabs.trimixblender"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode Math.max(1, major * 10000 + minor * 100 + patch)
+        versionName appVersion
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (keystore) {
+            release {
+                storeFile file(keystore)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                // APK signature schemes v2 (Android 7+) and v3 (9+: lets the key be rotated later).
+                enableV2Signing true
+                enableV3Signing true
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystore) signingConfig signingConfigs.release
+        }
+    }
+    // No dependency list encrypted for Google in the APK / bundle (F-Droid, reproducible builds).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'

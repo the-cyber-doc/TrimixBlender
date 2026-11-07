@@ -7,6 +7,7 @@
 		DOCKER_URL,
 		GITHUB_URL,
 		LICENSE_URL,
+		NATIVE,
 		versionLabel
 	} from '#lib/about.js';
 	import { asset } from '#lib/base.js';
@@ -28,7 +29,9 @@
 		</p>
 		<p>
 			Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how much O2, then He, then top-up gas
-			to add to a cylinder. It runs entirely in your browser and works offline once loaded; nothing is sent anywhere.
+			to add to a cylinder. {NATIVE
+				? 'It runs entirely on your device and needs no network; nothing is sent anywhere.'
+				: 'It runs entirely in your browser and works offline once loaded; nothing is sent anywhere.'}
 		</p>
 		<p class="message warning">
 			Gas blending is dangerous: oxygen fires, wrong mixes. Only blend if you are trained to, and always analyse the

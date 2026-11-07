@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The page's colours (src/app.css, dark). -->
+    <color name="background">#121417</color>
+    <color name="colorPrimary">#4FB3E0</color>
+    <color name="colorPrimaryDark">#4FB3E0</color>
+    <color name="colorAccent">#4FB3E0</color>
+</resources>

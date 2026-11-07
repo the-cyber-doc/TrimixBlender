@@ -25,6 +25,12 @@ updates:
     schedule: { interval: weekly }
     cooldown: { default-days: 14 }
 
+  # The Android app's Gradle plugin and AndroidX libraries (Capacitor's come with npm).
+  - package-ecosystem: gradle
+    directory: /android
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

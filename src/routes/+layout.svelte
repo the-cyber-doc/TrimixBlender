@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { dev } from '$app/env';
+	import { NATIVE } from '#lib/about.js';
 	import { persist } from '#lib/app.svelte.js';
 	import { asset, page } from '#lib/base.js';
 	import Menu from '#lib/Menu.svelte';
@@ -10,7 +11,7 @@
 	let { children } = $props();
 
 	persist();
-	$effect(() => registerServiceWorker(dev));
+	$effect(() => registerServiceWorker(dev || NATIVE));
 </script>
 
 <svelte:head>
