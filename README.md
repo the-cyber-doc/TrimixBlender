@@ -134,6 +134,12 @@ automatic signing: Apple issues and renews the distribution certificate and the 
 3. GitHub secrets: `APPLE_TEAM_ID` (Membership details), `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`
    (both on the keys page), `APP_STORE_CONNECT_API_KEY_BASE64` (`base64 -i AuthKey_XXXX.p8`).
 
+**Testing the signing before a release.** Every push already signs and checks the Android app when its secrets are set
+(job "Android app", step "Verify the signatures"). For both apps, run the workflow by hand: Actions > CI/CD Pipeline >
+Run workflow (choose the branch, "sign" checked), or `gh workflow run ci-cd.yml --ref main -f sign=true`. It builds and
+signs both apps as a release does, version 0.0.0, and fails on a missing or wrong secret; nothing is published. The
+signed `android-app` (APK, AAB) and `ios-app` (IPA) are the run's artifacts, kept 7 days: `gh run download <run id>`.
+
 The release's `.ipa` is uploaded to App Store Connect (Transporter, or `xcrun altool --upload-app`) for TestFlight and
 the App Store review. The app ID is the same on both platforms; it cannot change once the app is in a store.
 

@@ -25,6 +25,15 @@ on:
     tags: ['v*.*.*']
   pull_request:
     branches: [main]
+  # A rehearsal of a release's apps, from any branch (Actions > CI/CD Pipeline > Run workflow,
+  # or `gh workflow run ci-cd.yml --ref <branch> -f sign=true`): the Android and iOS apps
+  # signed as for a release, as the run's artifacts. Nothing is published.
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: Sign the Android and iOS apps (needs the signing secrets)
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -33,6 +42,8 @@ concurrency:
 env:
   REGISTRY: docker.io
   RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
+  # Signed apps required: a release, or a manual run with "sign".
+  SIGN: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.sign == true }}
 
 jobs:
   test:
@@ -136,8 +147,8 @@ jobs:
           if [ -n "$KEYSTORE" ]; then
             echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-          elif [ "$RELEASE" = true ]; then
-            echo "::error::A release needs the ANDROID_KEYSTORE_BASE64 secret (and its passwords): see the README."
+          elif [ "$SIGN" = true ]; then
+            echo "::error::Signing needs the ANDROID_KEYSTORE_BASE64 secret (and its passwords): see the README."
             exit 1
           else
             echo "No ANDROID_KEYSTORE_BASE64 secret: the APK and AAB are unsigned (not a release)."
@@ -218,9 +229,9 @@ jobs:
           echo "IOS_VERSION=$version" >> "$GITHUB_ENV"
           echo "IOS_BUILD=$build" >> "$GITHUB_ENV"
 
-      # Not a release: unsigned, it proves the app builds.
+      # Not signing: unsigned, it proves the app builds.
       - name: Build the app (unsigned)
-        if: env.RELEASE != 'true'
+        if: env.SIGN != 'true'
         run: |
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/ios" \
@@ -229,11 +240,11 @@ jobs:
           cp -R "$RUNNER_TEMP/ios/Build/Products/Release-iphoneos/App.app" ios-app/Payload/
           (cd ios-app && zip -qr trimix-blender-unsigned.ipa Payload && rm -rf Payload)
 
-      # A release: archived and exported signed for App Store Connect (TestFlight, the App
-      # Store). Automatic signing with the App Store Connect API key: Xcode gets the
+      # A release (or a manual signed run): archived and exported signed for App Store Connect
+      # (TestFlight, the App Store). Automatic signing with the App Store Connect API key: Xcode gets the
       # distribution certificate and the profile from Apple (cloud signing), no file to keep.
       - name: Build and sign the app
-        if: env.RELEASE == 'true'
+        if: env.SIGN == 'true'
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
@@ -241,7 +252,7 @@ jobs:
           API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: |
           if [ -z "$TEAM_ID" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER_ID" ] || [ -z "$API_KEY" ]; then
-            echo "::error::A release needs APPLE_TEAM_ID and the APP_STORE_CONNECT_* secrets: see the README."
+            echo "::error::Signing needs APPLE_TEAM_ID and the APP_STORE_CONNECT_* secrets: see the README."
             exit 1
           fi
           key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
