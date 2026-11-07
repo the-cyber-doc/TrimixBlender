@@ -115,8 +115,9 @@ Play App Signing, this key is your upload key and Google re-signs the app for th
 upload key before relying on it there.
 
 ```sh
-keytool -genkeypair -v -keystore release.jks -storetype PKCS12 -alias trimix-blender \
-  -keyalg EC -groupname secp521r1 -sigalg SHA512withECDSA -validity 10000
+keytool -J-Dkeystore.pkcs12.macAlgorithm=HmacPBESHA256 -genkeypair -v -keystore release.jks -storetype PKCS12 \
+  -alias trimix-blender -keyalg EC -groupname secp521r1 -sigalg SHA512withECDSA -validity 10000
+openssl pkcs12 -in release.jks -info -noout   # must say "MAC: sha256", not "PBMAC1" (JDK 21, CI's, cannot read it)
 base64 -w0 release.jks   # the value of ANDROID_KEYSTORE_BASE64
 ```
 
