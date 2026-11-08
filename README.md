@@ -102,8 +102,10 @@ Versions: `APP_VERSION=v1.2.3` (as for the web build) gives version 1.2.3 and bu
 
 ### Signing
 
-A release (a `v*.*.*` tag) publishes signed apps only: CI fails if a signing secret is missing. Other builds are unsigned
-when the secrets are absent (Android: unsigned APK and AAB; iOS: an unsigned build, to prove it compiles).
+A release (a `v*.*.*` tag) publishes signed apps only: CI fails if an Android signing secret is missing. Other builds
+are unsigned when the secrets are absent (Android: unsigned APK and AAB; iOS: an unsigned build, to prove it compiles).
+The iOS app is optional: if its job fails (build error, Apple secrets missing or wrong), the run is not failed and the
+release is published without the `.ipa`.
 
 **Android.** The key is made once with `keytool`, part of every JDK (Fedora: `sudo dnf install
 java-21-openjdk-headless`; Android Studio has one in `jbr/bin/`): it creates the keystore, the private key and its
@@ -125,7 +127,7 @@ GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID
 `ANDROID_KEY_PASSWORD` (a PKCS12 keystore has a single password: the same as the keystore's). To check an APK by hand:
 `apksigner verify --print-certs trimix-blender-1.2.3.apk` (build tools of the Android SDK).
 
-**iOS** (Apple Developer Program). CI archives the app and exports an `.ipa` signed for App Store Connect, with Xcode's
+**iOS** (Apple Developer Program; optional, see above). CI archives the app and exports an `.ipa` signed for App Store Connect, with Xcode's
 automatic signing: Apple issues and renews the distribution certificate and the profile, no file to keep.
 
 1. In the Apple Developer site, register the app ID `com.dolphinslabs.trimixblender`; in App Store Connect, create

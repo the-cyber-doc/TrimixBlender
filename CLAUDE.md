@@ -24,4 +24,5 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
   removes them, `tools/check-android-apk.sh` checks the APK), no tracker / analytics / Google or Firebase SDK, no
   network use. Android toolchain: JDK 21 + SDK 36.
 - CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
-  signed APK + AAB + IPA, image links); a release fails without the signing secrets (README, Signing).
+  signed APK + AAB, image links, and the IPA if the optional iOS job succeeded); a release fails without the Android
+  signing secrets (README, Signing).

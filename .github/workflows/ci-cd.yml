@@ -7,16 +7,20 @@ name: CI/CD Pipeline
 #     <user>/trimix-blender:1.2.3, :1.2, :1 and :latest;
 #   - creates the GitHub release, with the web build attached (to serve as is with any
 #     web server), the signed Android app (APK, and the AAB for Google Play), the signed iOS
-#     app (IPA, for App Store Connect / TestFlight), and the links to that release's images.
+#     app (IPA, for App Store Connect / TestFlight) when it could be built, and the links to
+#     that release's images.
 # The Android and iOS apps (capacitor.config.ts) are built on every push too: the APK is
 # checked for permissions and trackers (none allowed: tools/check-android-apk.sh).
+# The iOS app is optional: its job may fail (a warning, the run stays green) and the release
+# is then published without the IPA.
 # Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (Docker Hub, also for the dhi.io base images).
 # Signing the apps (see the README), required for a release, optional otherwise:
-#   Android: ANDROID_KEYSTORE_BASE64 (the .jks, base64), ANDROID_KEYSTORE_PASSWORD,
+#   Android (a release fails without them): ANDROID_KEYSTORE_BASE64 (the .jks, base64), ANDROID_KEYSTORE_PASSWORD,
 #     ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Without them (not a release): unsigned.
 #   iOS: APPLE_TEAM_ID, APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID,
 #     APP_STORE_CONNECT_API_KEY_BASE64 (the .p8, base64): Xcode's automatic signing, its
 #     certificate and profile managed by Apple. Not a release: an unsigned build only.
+#     Without them, a release has no IPA.
 # Actions pinned by commit (a tag can be moved), the version in a comment; Dependabot
 # updates them (.github/dependabot.yml).
 on:
@@ -192,10 +196,13 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # Optional: a failure here (build, missing or wrong Apple secrets) neither fails the run nor
+  # stops the release, which is then published without the IPA.
   ios:
     needs: test
-    name: iOS app
+    name: iOS app (optional)
     runs-on: macos-latest
+    continue-on-error: true
     permissions:
       contents: read
 
@@ -436,7 +443,10 @@ jobs:
 
   release:
     needs: [test, android, ios, merge-and-push]
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Waits for the iOS job but does not need it to succeed (the IPA is attached if built).
+    if: >-
+      !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.test.result == 'success' &&
+      needs.android.result == 'success' && needs.merge-and-push.result == 'success'
     name: GitHub release
     runs-on: ubuntu-latest
     permissions:
@@ -455,7 +465,9 @@ jobs:
           name: android-app
           path: android-app
 
+      # Absent when the (optional) iOS job failed.
       - name: Download the iOS app
+        continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: ios-app
@@ -472,9 +484,16 @@ jobs:
           zip -qr "$name.zip" trimix-blender
           mv android-app/trimix-blender.apk "trimix-blender-${VERSION}.apk"
           mv android-app/trimix-blender.aab "trimix-blender-${VERSION}.aab"
-          mv ios-app/trimix-blender.ipa "trimix-blender-${VERSION}.ipa"
-          sha256sum "$name.tar.gz" "$name.zip" trimix-blender-"${VERSION}".apk trimix-blender-"${VERSION}".aab \
-            trimix-blender-"${VERSION}".ipa > SHA256SUMS
+          files=("$name.tar.gz" "$name.zip" "trimix-blender-${VERSION}.apk" "trimix-blender-${VERSION}.aab")
+          if [ -f ios-app/trimix-blender.ipa ]; then
+            mv ios-app/trimix-blender.ipa "trimix-blender-${VERSION}.ipa"
+            files+=("trimix-blender-${VERSION}.ipa")
+            echo "IOS_LINE=- \`trimix-blender-${VERSION}.ipa\`: iOS 15+, signed for App Store Connect (TestFlight, the App Store)." >> "$GITHUB_ENV"
+          else
+            echo "::warning::No iOS app (job \"iOS app\" failed): the release has no IPA."
+          fi
+          sha256sum "${files[@]}" > SHA256SUMS
+          echo "RELEASE_FILES=${files[*]} SHA256SUMS" >> "$GITHUB_ENV"
 
       - name: Release notes
         env:
@@ -491,12 +510,12 @@ jobs:
 
           Plain HTTP on port 8080, for your TLS reverse proxy (see the README).
 
-          ## Android and iOS apps
+          ## Native apps
 
           Self-contained (the whole app is inside, it never uses the network), no permission, no tracker.
 
           - \`trimix-blender-${VERSION}.apk\`: Android 7+, signed, to install directly. \`.aab\`: for Google Play.
-          - \`trimix-blender-${VERSION}.ipa\`: iOS 15+, signed for App Store Connect (TestFlight, the App Store).
+          ${IOS_LINE}
 
           ## Web build
 
@@ -512,7 +531,4 @@ jobs:
           VERSION: ${{ needs.merge-and-push.outputs.version }}
         run: |
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Trimix Blender $VERSION" \
-            --notes-file notes.md --generate-notes \
-            "trimix-blender-${VERSION}-web.tar.gz" "trimix-blender-${VERSION}-web.zip" \
-            "trimix-blender-${VERSION}.apk" "trimix-blender-${VERSION}.aab" \
-            "trimix-blender-${VERSION}.ipa" SHA256SUMS
+            --notes-file notes.md --generate-notes $RELEASE_FILES
