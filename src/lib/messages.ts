@@ -55,10 +55,7 @@ export const TARGET_TEXT: Record<TargetProblem, string> = {
 	ppo2: 'The PPO2 limit must be above 0.',
 	'depth-beyond-mod': 'The target depth is deeper than the MOD of this mix.',
 	hypoxic: 'Hypoxic mix: not breathable at the surface.',
-	'density-recommended':
-		'Gas density at the target depth is above the recommended 5.2 g/l: more work of breathing and risk of CO2 ' +
-		'retention (Anthony & Mitchell 2016). Consider more helium.',
+	'density-recommended': 'Gas density at the target depth is above the recommended 5.2 g/l. Consider more helium.',
 	'density-maximum':
-		'Gas density at the target depth is above the 6.2 g/l absolute maximum: high risk of CO2 retention ' +
-		'(Anthony & Mitchell 2016). Add helium or plan a shallower dive.'
+		'Gas density at the target depth is above the 6.2 g/l absolute maximum. Add helium or plan a shallower dive.'
 };
