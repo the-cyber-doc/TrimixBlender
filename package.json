@@ -18,6 +18,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write . && eslint --fix .",
 		"icons": "node scripts/icons.js",
+		"screenshots": "playwright test -c playwright.screenshots.config.ts",
 		"nist:fetch": "sh scripts/fetch-nist.sh",
 		"nist:fit": "node scripts/fit-compressibility.js",
 		"build:native": "APP_TARGET=native vite build && APP_TARGET=native node scripts/relative-index.js && cap sync"

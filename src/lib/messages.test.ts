@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { blendErrorText, TARGET_TEXT, WARNING_TEXT } from './messages';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setLocale } from './i18n';
+import { blendErrorText, targetText, warningText } from './messages';
 import { DEFAULT_PREFERENCES } from './units';
 
 const p = DEFAULT_PREFERENCES;
+
+afterEach(() => setLocale('en', undefined));
 
 describe('messages', () => {
 	it('explains every blend error', () => {
@@ -22,9 +25,21 @@ describe('messages', () => {
 	});
 
 	it('has a text for every warning and target problem', () => {
-		expect(Object.keys(WARNING_TEXT)).toEqual(['outside-fit']);
-		expect(Object.values(TARGET_TEXT).every((t) => t.length > 0)).toBe(true);
-		expect(TARGET_TEXT['density-recommended']).toContain('5.2 g/l');
-		expect(TARGET_TEXT['density-maximum']).toContain('6.2 g/l');
+		expect(warningText('outside-fit')).toContain('350 bar');
+		expect(targetText('density-recommended')).toContain('5.2 g/l');
+		expect(targetText('density-maximum')).toContain('6.2 g/l');
+	});
+
+	it('speaks the current language, with its decimal separator', () => {
+		setLocale('fr', undefined);
+		expect(blendErrorText({ code: 'drain', excess: 'o2', drainTo: 37.46 }, p)).toBe(
+			"Il y a trop d'O2 dans le bloc pour ce mélange. Videz-le d’abord jusqu’à 37,4 bar."
+		);
+		expect(targetText('hypoxic')).toBe('Mélange hypoxique : non respirable en surface.');
+		setLocale('ja', undefined);
+		// No space between the sentences in Japanese.
+		expect(blendErrorText({ code: 'drain', excess: 'he', drainTo: 0 }, p)).toBe(
+			'このガスにはタンク内のHeが多すぎます。まず空にしてください。'
+		);
 	});
 });

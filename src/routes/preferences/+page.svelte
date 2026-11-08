@@ -1,22 +1,23 @@
 <script lang="ts">
 	import { preferences } from '#lib/app.svelte.js';
+	import { t } from '#lib/i18n.js';
 	import { UNIT_LABELS } from '#lib/units.js';
 
 	const UNITS = [
-		{ key: 'temperature', label: 'Temperature', options: UNIT_LABELS.temperature },
-		{ key: 'pressure', label: 'Pressure', options: UNIT_LABELS.pressure },
-		{ key: 'volume', label: 'Volume', options: UNIT_LABELS.volume },
-		{ key: 'depth', label: 'Depth', options: UNIT_LABELS.depth }
+		{ key: 'temperature', label: t.preferences.temperature, options: UNIT_LABELS.temperature },
+		{ key: 'pressure', label: t.preferences.pressure, options: UNIT_LABELS.pressure },
+		{ key: 'volume', label: t.preferences.volume, options: UNIT_LABELS.volume },
+		{ key: 'depth', label: t.preferences.depth, options: UNIT_LABELS.depth }
 	] as const;
 	const set = (key: (typeof UNITS)[number]['key'], value: string) =>
 		((preferences as unknown as Record<string, string>)[key] = value);
 </script>
 
-<svelte:head><title>Preferences · Trimix Blender</title></svelte:head>
+<svelte:head><title>{t.preferences.title} · Trimix Blender</title></svelte:head>
 
 <main class="page">
 	<div class="card prefs">
-		<h1>Preferences</h1>
+		<h1>{t.preferences.title}</h1>
 		{#each UNITS as unit (unit.key)}
 			<fieldset>
 				<legend>{unit.label}</legend>
@@ -35,7 +36,7 @@
 			</fieldset>
 		{/each}
 		<fieldset>
-			<legend>Gas model</legend>
+			<legend>{t.preferences.model}</legend>
 			<label class="check">
 				<input
 					type="radio"
@@ -43,7 +44,7 @@
 					checked={preferences.model === 'real'}
 					onchange={() => (preferences.model = 'real')}
 				/>
-				Real gases (compressibility from NIST data)
+				{t.preferences.real}
 			</label>
 			<label class="check">
 				<input
@@ -52,7 +53,7 @@
 					checked={preferences.model === 'ideal'}
 					onchange={() => (preferences.model = 'ideal')}
 				/>
-				Ideal gases (classic partial-pressure method)
+				{t.preferences.ideal}
 			</label>
 		</fieldset>
 		<fieldset>
@@ -64,7 +65,7 @@
 					checked={preferences.o2Narcotic}
 					onchange={() => (preferences.o2Narcotic = true)}
 				/>
-				O2 is narcotic (N2 + O2)
+				{t.preferences.o2Narcotic}
 			</label>
 			<label class="check">
 				<input
@@ -73,10 +74,10 @@
 					checked={!preferences.o2Narcotic}
 					onchange={() => (preferences.o2Narcotic = false)}
 				/>
-				N2 only
+				{t.preferences.n2Only}
 			</label>
 		</fieldset>
-		<p class="hint">Saved on this device. Depths use 10 m of seawater per bar, or 33 ft per atm.</p>
+		<p class="hint">{t.preferences.saved}</p>
 	</div>
 </main>
 

@@ -7,22 +7,30 @@
 	import TargetMix from '#lib/TargetMix.svelte';
 	import { targetMix } from '#lib/target.js';
 	import { format, pressureQuantity } from '#lib/units.js';
+	import { fill, t } from '#lib/i18n.js';
 
 	const bar = $derived(pressureQuantity(preferences));
 	const usedCount = $derived(app.gases.filter((g) => g.used).length);
 </script>
 
 <main class="page">
-	<Section title="Available gases" bind:open={app.open.gases} summary="{usedCount} of {app.gases.length} in use">
+	<Section
+		title={t.section.gases}
+		bind:open={app.open.gases}
+		summary={fill(t.section.gasesSummary, { used: usedCount, total: app.gases.length })}
+	>
 		<Gases />
 	</Section>
-	<Section title="Target mix" bind:open={app.open.target} summary={mixName(targetMix(app.target))}>
+	<Section title={t.section.target} bind:open={app.open.target} summary={mixName(targetMix(app.target))}>
 		<TargetMix />
 	</Section>
 	<Section
-		title="Mix to do"
+		title={t.section.mix}
 		bind:open={app.open.mix}
-		summary="{mixName(targetMix(app.target))} to {format(bar, app.mix.targetPressure)}"
+		summary={fill(t.section.mixSummary, {
+			mix: mixName(targetMix(app.target)),
+			pressure: format(bar, app.mix.targetPressure)
+		})}
 	>
 		<MixToDo />
 	</Section>

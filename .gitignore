@@ -10,3 +10,6 @@ vite.config.ts.timestamp-*
 /test-results
 /playwright-report
 release.jks
+# Store screenshots: generated (npm run screenshots, APPSTORE.md)
+/fastlane/metadata/android/*/images/phoneScreenshots/
+/fastlane/screenshots/

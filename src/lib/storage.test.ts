@@ -5,7 +5,10 @@ import { browserStorage, defaultState, load, parsePreferences, parseState, save 
 describe('preferences', () => {
 	it('falls back to the defaults', () => {
 		expect(parsePreferences(undefined)).toEqual(DEFAULT_PREFERENCES);
-		expect(parsePreferences({ pressure: 'kPa', volume: 3, o2Narcotic: 'yes' })).toEqual(DEFAULT_PREFERENCES);
+		expect(parsePreferences({ pressure: 'kPa', volume: 3, o2Narcotic: 'yes', language: 'tlh' })).toEqual(
+			DEFAULT_PREFERENCES
+		);
+		expect(parsePreferences({}).language).toBe('en');
 	});
 
 	it('keeps valid saved values', () => {
@@ -15,7 +18,8 @@ describe('preferences', () => {
 			volume: 'cuft',
 			depth: 'ft',
 			model: 'ideal',
-			o2Narcotic: false
+			o2Narcotic: false,
+			language: 'ja'
 		};
 		expect(parsePreferences(imperial)).toEqual(imperial);
 	});

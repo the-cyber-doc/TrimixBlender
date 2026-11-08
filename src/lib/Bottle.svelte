@@ -3,6 +3,7 @@
 	// share of the full cylinder by pressure, split into the gases' colours (fixed, whatever the theme).
 	import type { Stage } from './blend';
 	import { BAND_TEXT, GAS_COLORS, legend, segments } from './bottle';
+	import { t } from './i18n';
 	import { PERCENT, format, type Quantity } from './units';
 
 	let {
@@ -63,7 +64,7 @@
 				<span class="numbers">{format(PERCENT, part.share)}</span>
 			</li>
 		{:else}
-			<li class="hint">Empty</li>
+			<li class="hint">{t.mix.empty}</li>
 		{/each}
 	</ul>
 </figure>

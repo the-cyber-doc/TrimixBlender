@@ -1,0 +1,15 @@
+Trimix Blender berechnet Partialdruck-Mischungen von Luft, Nitrox und Trimix: wie viel Sauerstoff, dann Helium, dann Auffüllgas in eine Flasche kommt, und welcher Druck bei jedem Schritt am Manometer abzulesen ist.
+
+• Verfügbare Gase: erfasse deine O2-, Helium- und Luftbänke mit ihrem Druck. Die Mischung nimmt die niedrigste, die reicht, oder die gewählte.
+• Zielgemisch: Nitrox oder Trimix, mit verknüpften Feldern: %O2 ↔ MOD ↔ PPO2 sowie %He ↔ END ↔ Gasdichte auf Zieltiefe.
+• Warnungen zur Gasdichte nach den veröffentlichten Grenzen (5,2 g/l empfohlen, 6,2 g/l maximal).
+• Zu mischen: jeder Schritt als maßstäblich gefüllte Flasche, dazu das Etikett für die Flasche.
+• Realgas-Rechnung: die Kompressibilität jedes Gases ist an NIST-Referenzdaten angepasst. Die klassische Idealgas-Methode ist eine Einstellung.
+• Temperaturkompensation für warme Füllungen.
+• Ist ein Gemisch nicht machbar, sagt die App warum, und nennt den Druck, auf den die Flasche abzulassen ist.
+• Metrische oder imperiale Einheiten: bar oder psi, Liter oder cu ft, Meter oder Fuß, °C oder °F.
+• 8 Sprachen: Englisch, Französisch, Deutsch, Spanisch, Italienisch, Niederländisch, Japanisch und vereinfachtes Chinesisch.
+
+Datenschutz von Grund auf: die App läuft vollständig auf deinem Gerät. Sie braucht kein Netz, fragt nach keiner Berechtigung und hat weder Werbung noch Tracker. Kostenlos und Open Source (GNU GPL v3).
+
+Gasmischen ist gefährlich. Nutze die App nur mit entsprechender Ausbildung, und analysiere das fertige Gemisch immer vor dem Tauchen.

@@ -1,0 +1,15 @@
+Trimix Blender berekent partiële-drukmengsels van lucht, nitrox en trimix: hoeveel zuurstof, dan helium, dan bijvulgas er in een fles moet, en welke druk de manometer bij elke stap moet aangeven.
+
+• Beschikbare gassen: registreer je O2-, helium- en luchtbanken met hun druk. Het mengsel gebruikt de laagste die volstaat, of degene die je kiest.
+• Doelmengsel: nitrox of trimix, met gekoppelde velden: %O2 ↔ MOD ↔ PPO2, en %He ↔ END ↔ gasdichtheid op doeldiepte.
+• Waarschuwingen voor gasdichtheid volgens de gepubliceerde grenzen (5,2 g/l aanbevolen, 6,2 g/l maximum).
+• Te mengen: elke stap getekend als een fles op schaal gevuld, en het etiket voor op de fles.
+• Reëlegasberekening: de samendrukbaarheid van elk gas is gefit op NIST-referentiegegevens. De klassieke idealegasmethode is een voorkeur.
+• Temperatuurcompensatie voor warme vullingen.
+• Kan een mengsel niet gemaakt worden, dan zegt de app waarom, en tot welke druk de fles moet worden afgelaten.
+• Metrische of imperiale eenheden: bar of psi, liter of cu ft, meter of voet, °C of °F.
+• 8 talen: Engels, Frans, Duits, Spaans, Italiaans, Nederlands, Japans en vereenvoudigd Chinees.
+
+Privacy als uitgangspunt: de app werkt volledig op je apparaat. Ze gebruikt geen netwerk, vraagt geen enkele toestemming, en heeft geen reclame en geen tracker. Gratis en open source (GNU GPL v3).
+
+Gas mengen is gevaarlijk. Gebruik deze app alleen als je opgeleid bent om gas te mengen, en analyseer het eindmengsel altijd voor je ermee duikt.

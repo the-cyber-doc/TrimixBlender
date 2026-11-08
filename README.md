@@ -29,6 +29,9 @@ then top-up gas to add to a cylinder, and shows the four stages as cylinders and
   - Impossible mixes are explained. When the cylinder holds too much O2, too much He or too much gas, the app gives the
     pressure to drain it down to.
 - **Preferences**: °C/°F, bar/psi, l/cu ft, m/ft, real/ideal gases, END with O2 narcotic or N2 only.
+- **Languages**: English (default), French, German, Spanish, Italian, Dutch, Japanese and Simplified Chinese, chosen
+  from the menu (flag and code, first entry). Numbers use the language's decimal separator; both `.` and `,` are
+  accepted when typing.
 - **Updates**: when a new version is deployed, a banner offers to reload.
 
 ## How the maths works (summary; details in `formulas.ts`)
@@ -71,6 +74,9 @@ Layout:
 | `android/`, `ios/`    | The native apps (Capacitor projects), see below                       |
 
 ## Android and iOS apps
+
+Publishing them in Google Play and the App Store, with the listings and screenshots in every language:
+[APPSTORE.md](APPSTORE.md).
 
 The same app, packaged with [Capacitor](https://capacitorjs.com/) as a native app for each platform
 (`capacitor.config.ts`):

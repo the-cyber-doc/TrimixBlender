@@ -2,6 +2,7 @@
 	// A collapsible area. Collapsed: a click anywhere on it expands it. Expanded: only the
 	// arrow on the right collapses it (clicks inside the content never do).
 	import type { Snippet } from 'svelte';
+	import { fill, t } from './i18n';
 
 	let {
 		title,
@@ -22,7 +23,7 @@
 				class="arrow"
 				aria-expanded="true"
 				aria-controls="{id}-body"
-				aria-label="Collapse {title}"
+				aria-label={fill(t.section.collapse, { title })}
 				onclick={() => (open = false)}
 			>
 				{@render chevron()}

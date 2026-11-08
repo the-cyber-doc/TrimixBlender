@@ -3,6 +3,7 @@
 	import { app, preferences } from './app.svelte';
 	import NumberField from './NumberField.svelte';
 	import { mixName, newGas, validGas, type Gas } from './gases';
+	import { fill, t } from './i18n';
 	import { PERCENT, pressureQuantity } from './units';
 
 	const bar = $derived(pressureQuantity(preferences));
@@ -17,35 +18,45 @@
 	const remove = (gas: Gas) => (app.gases = app.gases.filter((g) => g !== gas));
 </script>
 
-<p class="hint">Check the gases the blend may use. Their pressure limits what each one can fill without a booster.</p>
+<p class="hint">{t.gases.hint}</p>
 
 <ul class="gases">
 	{#each app.gases as gas (gas.id)}
 		<li class="gas" class:unused={!gas.used} data-testid="gas">
 			<label class="check use">
-				<input type="checkbox" bind:checked={gas.used} aria-label="Use {gas.name}" />
+				<input type="checkbox" bind:checked={gas.used} aria-label={fill(t.gases.use, { name: gas.name })} />
 			</label>
 			<label class="name">
-				<span>Name</span>
+				<span>{t.gases.name}</span>
 				<input type="text" bind:value={gas.name} />
 			</label>
 			<NumberField label="O2" quantity={PERCENT} value={gas.o2} onchange={(v) => setMix(gas, { o2: v ?? 0 })} />
 			<NumberField label="He" quantity={PERCENT} value={gas.he} onchange={(v) => setMix(gas, { he: v ?? 0 })} />
-			<NumberField label="Pressure" quantity={bar} value={gas.pressure} onchange={(v) => (gas.pressure = v ?? 0)} />
-			<button type="button" class="secondary remove" aria-label="Remove {gas.name}" onclick={() => remove(gas)}>
-				Remove
+			<NumberField
+				label={t.gases.pressure}
+				quantity={bar}
+				value={gas.pressure}
+				onchange={(v) => (gas.pressure = v ?? 0)}
+			/>
+			<button
+				type="button"
+				class="secondary remove"
+				aria-label={fill(t.gases.removeGas, { name: gas.name })}
+				onclick={() => remove(gas)}
+			>
+				{t.gases.remove}
 			</button>
 			{#if !validGas(gas)}
-				<p class="message error wide">O2 and He must be from 0 to 100 % in total, the pressure 0 or more.</p>
+				<p class="message error wide">{t.gases.invalid}</p>
 			{/if}
 		</li>
 	{:else}
-		<li class="hint">No gas registered.</li>
+		<li class="hint">{t.gases.none}</li>
 	{/each}
 </ul>
 
 <div>
-	<button type="button" onclick={() => app.gases.push(newGas(app.gases))}>Add a gas</button>
+	<button type="button" onclick={() => app.gases.push(newGas(app.gases))}>{t.gases.add}</button>
 </div>
 
 <style>

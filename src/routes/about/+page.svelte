@@ -12,64 +12,53 @@
 	} from '#lib/about.js';
 	import { asset } from '#lib/base.js';
 	import { Z_MAX_ERROR } from '#lib/compressibility-coefficients.js';
+	import { fill, locale, split, t } from '#lib/i18n.js';
 	import { REFERENCES } from '#lib/references.js';
 
 	const built = new Date(BUILD_DATE);
-	const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(built);
+	const date = new Intl.DateTimeFormat(locale(), { dateStyle: 'medium' }).format(built);
 </script>
 
-<svelte:head><title>About · Trimix Blender</title></svelte:head>
+<svelte:head><title>{t.about.title} · Trimix Blender</title></svelte:head>
 
 <main class="page">
 	<div class="card about">
-		<h1>About</h1>
+		<h1>{t.about.title}</h1>
 		<p class="app">
 			<img src={asset('/favicon.svg')} alt="" width="48" height="48" />
 			<span>Trimix Blender</span>
 		</p>
-		<p>
-			Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how much O2, then He, then top-up gas
-			to add to a cylinder. {NATIVE
-				? 'It runs entirely on your device and needs no network; nothing is sent anywhere.'
-				: 'It runs entirely in your browser and works offline once loaded; nothing is sent anywhere.'}
-		</p>
-		<p class="message warning">
-			Gas blending is dangerous: oxygen fires, wrong mixes. Only blend if you are trained to, and always analyse the
-			final mix before diving it.
-		</p>
+		<p>{t.about.intro} {NATIVE ? t.about.native : t.about.web}</p>
+		<p class="message warning">{t.about.danger}</p>
 		<ul class="facts">
-			<li data-testid="version">Version {versionLabel(APP_VERSION, APP_BUILD)}</li>
-			<li>Built on {date}</li>
+			<li data-testid="version">{fill(t.about.version, { version: versionLabel(APP_VERSION, APP_BUILD) })}</li>
+			<li>{fill(t.about.built, { date })}</li>
 		</ul>
 		<ul class="facts">
-			<li><a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">Source code on GitHub</a></li>
-			<li><a href={DOCKER_URL} target="_blank" rel="noopener noreferrer">Docker image on Docker Hub</a></li>
+			<li><a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">{t.about.source}</a></li>
+			<li><a href={DOCKER_URL} target="_blank" rel="noopener noreferrer">{t.about.docker}</a></li>
 		</ul>
 		<p class="legal" data-testid="copyright">
 			© {built.getUTCFullYear()}
 			{COPYRIGHT_HOLDER} ·
-			<a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">Licensed under the GNU GPL v3</a>
+			<a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">{t.about.license}</a>
 		</p>
 
-		<h2>How it calculates</h2>
+		<h2>{t.about.how}</h2>
 		<ul>
-			<li>Partial pressures, MOD and END: Dalton's law, with 10 m of seawater per bar (33 ft per atm).</li>
+			<li>{t.about.howDalton}</li>
+			<li>{t.about.howMoles}</li>
+			<li>{fill(t.about.howReal, { accuracy: Z_MAX_ERROR.join('; ') })}</li>
+			<li>{t.about.howTemperature}</li>
 			<li>
-				The blend is solved in moles, gas by gas (O2, He and N2), so that it holds for real gases. Gauge readings are
-				turned into absolute pressures; an empty cylinder still holds 1 atm of its gas.
+				{#each split(t.about.howSource, { file: 'src/lib/formulas.ts' }) as part, i (i)}{#if part.value}<code
+							>{part.text}</code
+						>{:else}{part.text}{/if}{/each}
 			</li>
-			<li>
-				Real gases: each gas's compressibility factor Z is fitted to NIST reference data (−10 to +60 °C, up to 350 bar);
-				a mix's Z follows Amagat's law. Fit accuracy: {Z_MAX_ERROR.join('; ')}.
-			</li>
-			<li>
-				Temperature compensation: the target pressure is the pressure at 15 °C (the reference of a cylinder's rated
-				pressure); the pressures shown are read at the filling temperature.
-			</li>
-			<li>Every formula, with its source, is in <code>src/lib/formulas.ts</code>.</li>
 		</ul>
 
-		<h2>References</h2>
+		<!-- The references stay as published (mostly English). -->
+		<h2>{t.about.references}</h2>
 		<ol class="references">
 			{#each REFERENCES as ref (ref.id)}
 				<li id={ref.id}>

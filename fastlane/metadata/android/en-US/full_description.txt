@@ -1,0 +1,15 @@
+Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how much oxygen, then helium, then top-up gas to add to a cylinder, and the pressure to read on the gauge at each step.
+
+• Available gases: register your O2, helium and air banks with their pressure. The blend uses the lowest one that works, or the one you choose.
+• Target mix: nitrox or trimix, with linked fields: %O2 ↔ MOD ↔ PPO2, and %He ↔ END ↔ gas density at the target depth.
+• Gas density warnings against the published limits (5.2 g/l recommended, 6.2 g/l maximum).
+• Mix to do: each step drawn as a cylinder filled to scale, and the label to stick on the cylinder.
+• Real-gas maths: each gas's compressibility is fitted to NIST reference data. The classic ideal-gas method is a preference.
+• Temperature compensation for hot fills.
+• When a mix cannot be made, the app says why, and gives the pressure to drain the cylinder down to.
+• Metric or imperial units: bar or psi, litres or cu ft, metres or feet, °C or °F.
+• 8 languages: English, French, German, Spanish, Italian, Dutch, Japanese and Simplified Chinese.
+
+Private by design: the app works entirely on your device. It needs no network, asks for no permission, and has no ads and no tracker. Free and open source (GNU GPL v3).
+
+Gas blending is dangerous. Use this app only if you are trained to blend gases, and always analyse the final mix before diving it.

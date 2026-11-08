@@ -4,6 +4,7 @@
 
 import { REFERENCE_TEMPERATURE, type Mix } from './formulas';
 import { DEFAULT_GASES, validGas, type Gas } from './gases';
+import { LOCALE_CODES } from './i18n';
 import { DEFAULT_TARGET, type Target } from './target';
 import { DEFAULT_PREFERENCES, type Preferences } from './units';
 
@@ -80,7 +81,8 @@ export function parsePreferences(saved: unknown): Preferences {
 		volume: oneOf(p.volume, ['l', 'cuft'], DEFAULT_PREFERENCES.volume),
 		depth: oneOf(p.depth, ['m', 'ft'], DEFAULT_PREFERENCES.depth),
 		model: oneOf(p.model, ['real', 'ideal'], DEFAULT_PREFERENCES.model),
-		o2Narcotic: p.o2Narcotic
+		o2Narcotic: p.o2Narcotic,
+		language: oneOf(p.language, LOCALE_CODES, DEFAULT_PREFERENCES.language)
 	};
 }
 

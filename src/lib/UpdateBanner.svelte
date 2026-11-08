@@ -1,5 +1,6 @@
 <script lang="ts">
 	// "A new version is available" with Reload. Never reloads by itself: a blend may be in progress.
+	import { t } from './i18n';
 	import { onAppUpdated } from './pwa';
 
 	let updated = $state(false);
@@ -9,9 +10,9 @@
 
 {#if updated}
 	<div class="update" role="status" data-testid="update-banner">
-		<span>A new version of the app is available.</span>
-		<button type="button" onclick={() => location.reload()}>Reload</button>
-		<button type="button" class="secondary" onclick={() => (updated = false)}>Later</button>
+		<span>{t.update.available}</span>
+		<button type="button" onclick={() => location.reload()}>{t.update.reload}</button>
+		<button type="button" class="secondary" onclick={() => (updated = false)}>{t.update.later}</button>
 	</div>
 {/if}
 

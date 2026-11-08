@@ -2,8 +2,9 @@
 	import '../app.css';
 	import { dev } from '$app/env';
 	import { NATIVE } from '#lib/about.js';
-	import { persist } from '#lib/app.svelte.js';
+	import { persist, preferences } from '#lib/app.svelte.js';
 	import { asset, page } from '#lib/base.js';
+	import { setLocale } from '#lib/i18n.js';
 	import Menu from '#lib/Menu.svelte';
 	import { registerServiceWorker } from '#lib/pwa.js';
 	import UpdateBanner from '#lib/UpdateBanner.svelte';
@@ -11,6 +12,8 @@
 	let { children } = $props();
 
 	persist();
+	// The texts follow the language: set before the app is rendered (again) below.
+	const language = $derived(setLocale(preferences.language));
 	$effect(() => registerServiceWorker(dev || NATIVE));
 </script>
 
@@ -18,17 +21,20 @@
 	<title>Trimix Blender</title>
 </svelte:head>
 
-<header>
-	<a class="brand" href={page('/')}>
-		<img src={asset('/favicon.svg')} alt="" width="28" height="28" />
-		Trimix Blender
-	</a>
-	<Menu />
-</header>
+<!-- A new language renders the whole app again, in it (i18n.ts). -->
+{#key language}
+	<header>
+		<a class="brand" href={page('/')}>
+			<img src={asset('/favicon.svg')} alt="" width="28" height="28" />
+			Trimix Blender
+		</a>
+		<Menu />
+	</header>
 
-{@render children()}
+	{@render children()}
 
-<UpdateBanner />
+	<UpdateBanner />
+{/key}
 
 <style>
 	header {

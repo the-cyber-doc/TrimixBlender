@@ -2,7 +2,8 @@
 	// Target mix: nitrox or trimix, depth, %O2 ↔ MOD ↔ PPO2, %He ↔ END ↔ gas density, %N2.
 	import { app, preferences } from './app.svelte';
 	import NumberField from './NumberField.svelte';
-	import { TARGET_TEXT } from './messages';
+	import { fill, split, t } from './i18n';
+	import { targetText } from './messages';
 	import { setDensity, setDepth, setEnd, setHe, setKind, setMod, setO2, setPpo2, view } from './target';
 	import { DENSITY_LIMITS } from './formulas';
 	import { DENSITY, PARTIAL_PRESSURE, PERCENT, depthQuantity, format } from './units';
@@ -14,7 +15,7 @@
 </script>
 
 <fieldset class="kind">
-	<legend>Mix</legend>
+	<legend>{t.target.mix}</legend>
 	<label class="check"
 		><input
 			type="radio"
@@ -37,11 +38,11 @@
 
 <div class="fields">
 	<NumberField
-		label="Target depth"
+		label={t.target.depth}
 		quantity={depth}
 		value={app.target.depth}
 		optional
-		placeholder="optional"
+		placeholder={t.target.optional}
 		testid="depth"
 		onchange={(d) => update((t) => setDepth(t, d))}
 	/>
@@ -63,7 +64,7 @@
 		onchange={(mod) => mod !== null && update((t) => setMod(t, mod))}
 	/>
 	<NumberField
-		label="PPO2 max"
+		label={t.target.ppo2Max}
 		quantity={PARTIAL_PRESSURE}
 		value={app.target.ppo2}
 		testid="ppo2"
@@ -85,26 +86,24 @@
 			quantity={depth}
 			value={v.end}
 			disabled={app.target.depth === null}
-			placeholder="needs a depth"
+			placeholder={t.target.needsDepth}
 			testid="end"
 			onchange={(end) => end !== null && update((t) => setEnd(t, end, preferences.o2Narcotic))}
 		/>
 		<div class="with-note">
 			<NumberField
-				label="Gas density"
+				label={t.target.density}
 				quantity={DENSITY}
 				value={app.target.depth === null ? null : v.density.value}
 				disabled={app.target.depth === null}
-				placeholder="needs a depth"
+				placeholder={t.target.needsDepth}
 				testid="target-density"
 				onchange={(d) => d !== null && update((t) => setDensity(t, d, preferences))}
 			/>
 			{@render limits()}
 		</div>
 	</div>
-	<p class="hint">
-		END with {preferences.o2Narcotic ? 'O2 counted as narcotic' : 'N2 only as narcotic'} (Preferences).
-	</p>
+	<p class="hint">{preferences.o2Narcotic ? t.target.endO2 : t.target.endN2}</p>
 {/if}
 
 <p class="n2" data-testid="n2">N2: <strong class="numbers">{format(PERCENT, v.n2)}</strong></p>
@@ -112,9 +111,9 @@
 {#if !trimix}
 	<div class="density" data-testid="density">
 		<p>
-			Gas density at {app.target.depth !== null
-				? format(depth, app.target.depth)
-				: `the MOD (${format(depth, v.mod)})`}:
+			{app.target.depth !== null
+				? fill(t.target.densityAtDepth, { depth: format(depth, app.target.depth) })
+				: fill(t.target.densityAtMod, { mod: format(depth, v.mod) })}
 			<strong class="numbers" data-testid="density-value">{format(DENSITY, v.density.value)}</strong>
 		</p>
 		{@render limits()}
@@ -124,21 +123,31 @@
 {#snippet limits()}
 	<p class="hint numbers" data-testid="density-limits">
 		<span class="line"
-			>Recommended ≤ <span class="nowrap">{format(DENSITY, DENSITY_LIMITS.recommended)}</span> down to
-			<span class="nowrap">{format(depth, v.density.recommendedDepth)}</span>;</span
+			>{@render values(t.target.recommended, {
+				density: format(DENSITY, DENSITY_LIMITS.recommended),
+				depth: format(depth, v.density.recommendedDepth)
+			})}</span
 		>
 		<span class="line"
-			>maximum <span class="nowrap">{format(DENSITY, DENSITY_LIMITS.maximum)}</span> at
-			<span class="nowrap">{format(depth, v.density.maximumDepth)}</span>.</span
+			>{@render values(t.target.maximum, {
+				density: format(DENSITY, DENSITY_LIMITS.maximum),
+				depth: format(depth, v.density.maximumDepth)
+			})}</span
 		>
 	</p>
 {/snippet}
 
+<!-- A text with its values each kept on one line. -->
+{#snippet values(text: string, parts: Record<string, string>)}
+	{#each split(text, parts) as part, i (i)}{#if part.value}<span class="nowrap">{part.text}</span
+			>{:else}{part.text}{/if}{/each}
+{/snippet}
+
 {#each v.errors as problem (problem)}
-	<p class="message error" role="alert">{TARGET_TEXT[problem]}</p>
+	<p class="message error" role="alert">{targetText(problem)}</p>
 {/each}
 {#each v.warnings as problem (problem)}
-	<p class="message warning">{TARGET_TEXT[problem]}</p>
+	<p class="message warning">{targetText(problem)}</p>
 {/each}
 
 <style>

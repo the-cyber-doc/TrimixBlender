@@ -13,6 +13,7 @@ import {
 	type DepthUnit,
 	type GasModel
 } from './formulas';
+import type { Locale } from './i18n';
 
 export type TemperatureUnit = 'C' | 'F';
 export type PressureUnit = 'bar' | 'psi';
@@ -26,6 +27,8 @@ export interface Preferences {
 	model: GasModel;
 	/** END counts O2 as narcotic (default) or N2 only. */
 	o2Narcotic: boolean;
+	/** The app's language (i18n.ts). */
+	language: Locale;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -34,7 +37,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	volume: 'l',
 	depth: 'm',
 	model: 'real',
-	o2Narcotic: true
+	o2Narcotic: true,
+	language: 'en'
 };
 
 export const UNIT_LABELS = {
@@ -102,12 +106,20 @@ export const DENSITY: Quantity = { toDisplay: (v) => v, fromDisplay: (v) => v, u
 /** A partial pressure (bar or ata, as the PPO2 limit). */
 export const PARTIAL_PRESSURE: Quantity = { toDisplay: (v) => v, fromDisplay: (v) => v, unit: '', decimals: 2 };
 
-/** Rounds to `decimals` and drops trailing zeros (32.0 → "32", 1.40 → "1.4"); "-0" never shows. */
+let decimalSeparator: '.' | ',' = '.';
+
+/** The decimal separator of the numbers shown: the language's (i18n.ts setLocale). */
+export function setDecimalSeparator(separator: '.' | ',') {
+	decimalSeparator = separator;
+}
+
+/** Rounds to `decimals` and drops trailing zeros (32.0 → "32", 1.40 → "1.4"); "-0" never shows.
+ * With the language's decimal separator ("1,4"). */
 export function formatNumber(value: number, decimals: number): string {
 	if (!Number.isFinite(value)) return '–';
 	const text = value.toFixed(decimals);
 	const trimmed = decimals > 0 ? text.replace(/\.?0+$/, '') : text;
-	return trimmed === '-0' ? '0' : trimmed;
+	return (trimmed === '-0' ? '0' : trimmed).replace('.', decimalSeparator);
 }
 
 /** An internal value as shown, with its unit: "200 bar", "32 %". */

@@ -5,7 +5,8 @@
 	import Bottle from './Bottle.svelte';
 	import { REFERENCE_TEMPERATURE } from './formulas';
 	import { mixName } from './gases';
-	import { WARNING_TEXT, blendErrorText } from './messages';
+	import { fill, t } from './i18n';
+	import { blendErrorText, warningText } from './messages';
 	import NumberField from './NumberField.svelte';
 	import Sticker from './Sticker.svelte';
 	import { view } from './target';
@@ -53,10 +54,11 @@
 	const plan = $derived(result?.ok ? result : undefined);
 	const topName = $derived(plan ? plan.sources.top.name : 'Air');
 
-	const TITLES: Record<Stage['step'], string> = { start: '1. Now', o2: '2. + O2', he: '3. + He', top: '4. + top-up' };
+	const GAS = { o2: 'O2', he: 'He' } as const;
+	/** "1. Now", "2. + O2", "3. + He", "4. + Air" (the top-up gas's name). */
 	function title(stage: Stage, index: number) {
-		if (stage.step === 'top') return `${index + 1}. + ${topName}`;
-		return TITLES[stage.step];
+		if (stage.step === 'start') return `${index + 1}. ${t.mix.now}`;
+		return `${index + 1}. + ${stage.step === 'top' ? topName : GAS[stage.step]}`;
 	}
 	function added(stage: Stage) {
 		if (!plan || stage.step === 'start') return '';
@@ -66,16 +68,16 @@
 
 	type Role = 'o2' | 'he' | 'top';
 	const ROLES: { role: Role; label: string }[] = [
-		{ role: 'o2', label: 'O2 from' },
-		{ role: 'he', label: 'He from' },
-		{ role: 'top', label: 'Top up with' }
+		{ role: 'o2', label: t.mix.o2From },
+		{ role: 'he', label: t.mix.heFrom },
+		{ role: 'top', label: t.mix.topWith }
 	];
 	/** The gas shown in a role's list: the user's choice, else the one the blend picked, else the first. */
 	const selected = (role: Role) => chosen[role] ?? plan?.sources[role]?.id ?? choices[role][0]?.id ?? '';
 </script>
 
 <div class="group">
-	<h3>Cylinder now</h3>
+	<h3>{t.mix.cylinderNow}</h3>
 	<div class="fields">
 		<NumberField
 			label="O2"
@@ -92,28 +94,28 @@
 			onchange={(v) => (m.start.he = v ?? 0)}
 		/>
 		<NumberField
-			label="Pressure"
+			label={t.mix.pressure}
 			quantity={bar}
 			value={m.startPressure}
 			testid="start-pressure"
 			onchange={(v) => (m.startPressure = v ?? 0)}
 		/>
 		<NumberField
-			label="Volume"
+			label={t.mix.volume}
 			quantity={volumeQuantity(preferences)}
 			value={m.volume}
 			testid="volume"
 			onchange={(v) => (m.volume = v ?? 0)}
 		/>
 	</div>
-	<p class="hint">Currently {mixName(m.start)}. Volume: the cylinder's water volume.</p>
+	<p class="hint">{fill(t.mix.currently, { mix: mixName(m.start) })}</p>
 </div>
 
 <div class="group">
-	<h3>Target</h3>
+	<h3>{t.mix.target}</h3>
 	<div class="fields">
 		<NumberField
-			label="Target pressure"
+			label={t.mix.targetPressure}
 			quantity={bar}
 			value={m.targetPressure}
 			testid="target-pressure"
@@ -122,7 +124,7 @@
 	</div>
 	<dl class="summary numbers" data-testid="reminder">
 		<div>
-			<dt>Mix</dt>
+			<dt>{t.mix.mix}</dt>
 			<dd>{mixName(target.mix)}</dd>
 		</div>
 		<div>
@@ -146,29 +148,28 @@
 			<dd>{format(PARTIAL_PRESSURE, target.pp.n2)}</dd>
 		</div>
 		<div>
-			<dt>Density</dt>
+			<dt>{t.mix.density}</dt>
 			<dd data-testid="reminder-density">{format(DENSITY, target.density.value)}</dd>
 		</div>
 		<div>
-			<dt>Gas when full</dt>
+			<dt>{t.mix.gasWhenFull}</dt>
 			<dd data-testid="free-gas">{plan ? format(gasVolumeQuantity(preferences), plan.freeGas) : '–'}</dd>
 		</div>
 	</dl>
 	<p class="hint">
-		Partial pressures and density at {app.target.depth !== null
-			? `the target depth (${format(depth, app.target.depth)})`
-			: 'the MOD'}. Gas when full: free gas volume at 1 bar and 15 °C.
+		{app.target.depth !== null ? fill(t.mix.atDepth, { depth: format(depth, app.target.depth) }) : t.mix.atMod}
 	</p>
 </div>
 
 <div class="group">
 	<div class="temperature">
 		<label class="check compensate"
-			><input type="checkbox" bind:checked={m.compensate} data-testid="compensate" /> Temperature compensated</label
+			><input type="checkbox" bind:checked={m.compensate} data-testid="compensate" />
+			{t.mix.compensated}</label
 		>
 		{#if m.compensate}
 			<NumberField
-				label="Cylinder temperature while filling"
+				label={t.mix.fillTemperature}
 				quantity={temperatureQuantity(preferences)}
 				value={m.temperature}
 				testid="temperature"
@@ -177,10 +178,7 @@
 		{/if}
 	</div>
 	{#if m.compensate}
-		<p class="hint">
-			The pressures below are read at this temperature; the target pressure is reached once the cylinder is back at 15
-			°C.
-		</p>
+		<p class="hint">{t.mix.compensatedHint}</p>
 	{/if}
 </div>
 
@@ -198,7 +196,7 @@
 					{#each choices[role] as gas (gas.id)}
 						<option value={gas.id}>{gas.name}, {format(bar, gas.pressure)}</option>
 					{:else}
-						<option value="">No gas in use</option>
+						<option value="">{t.mix.noGas}</option>
 					{/each}
 				</select>
 			</label>
@@ -212,17 +210,17 @@
 		{#if result.error.code === 'drain'}
 			{@const drainTo = roundDown(bar, result.error.drainTo)}
 			<button type="button" class="secondary" onclick={() => (m.startPressure = drainTo)}
-				>Set the cylinder to {format(bar, drainTo)}</button
+				>{fill(t.mix.setCylinder, { pressure: format(bar, drainTo) })}</button
 			>
 		{/if}
 	</div>
 {:else if !result}
-	<p class="message error" role="alert" data-testid="blend-error">Check the target mix first.</p>
+	<p class="message error" role="alert" data-testid="blend-error">{t.mix.checkTarget}</p>
 {/if}
 
 {#if plan}
 	{#each plan.warnings as warning (warning)}
-		<p class="message warning">{WARNING_TEXT[warning]}</p>
+		<p class="message warning">{warningText(warning)}</p>
 	{/each}
 	<div class="bottles" class:four={plan.stages.length === 4} style:--count={plan.stages.length}>
 		{#each plan.stages as stage, i (stage.step)}
@@ -232,7 +230,7 @@
 	<div class="sticker-row">
 		<Sticker {plan} {bar} />
 	</div>
-	<p class="hint">Check the final mix with an analyser before use.</p>
+	<p class="hint">{t.mix.analyse}</p>
 {/if}
 
 <style>

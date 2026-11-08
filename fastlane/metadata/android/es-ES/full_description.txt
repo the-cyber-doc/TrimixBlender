@@ -1,0 +1,15 @@
+Trimix Blender calcula mezclas por presiones parciales de aire, nitrox y trimix: cuánto oxígeno, luego helio, luego gas de llenado añadir a una botella, y la presión que debe marcar el manómetro en cada paso.
+
+• Gases disponibles: registra tus bancos de O2, helio y aire con su presión. La mezcla usa el más bajo que sirve, o el que elijas.
+• Mezcla objetivo: nitrox o trimix, con campos enlazados: %O2 ↔ MOD ↔ PPO2, y %He ↔ END ↔ densidad del gas a la profundidad objetivo.
+• Avisos de densidad del gas según los límites publicados (5,2 g/l recomendado, 6,2 g/l máximo).
+• Mezcla a preparar: cada paso dibujado como una botella llenada a escala, y la etiqueta para pegar en la botella.
+• Cálculo con gases reales: la compresibilidad de cada gas se ajusta a los datos de referencia del NIST. El método clásico de gases ideales es una preferencia.
+• Compensación de temperatura para llenados en caliente.
+• Cuando una mezcla no se puede preparar, la app explica por qué, y da la presión a la que vaciar la botella.
+• Unidades métricas o imperiales: bar o psi, litros o cu ft, metros o pies, °C o °F.
+• 8 idiomas: inglés, francés, alemán, español, italiano, neerlandés, japonés y chino simplificado.
+
+Privada por diseño: la app funciona por completo en tu dispositivo. No usa la red, no pide ningún permiso, y no tiene anuncios ni rastreadores. Gratuita y de código abierto (GNU GPL v3).
+
+Mezclar gases es peligroso. Usa esta app solo si tienes formación para mezclar gases, y analiza siempre la mezcla final antes de bucear con ella.
