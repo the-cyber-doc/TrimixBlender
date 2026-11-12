@@ -110,15 +110,18 @@ trap 'cp -r "$work"/out/logs "$work"/out/*.apk "$out"/ 2>/dev/null; rm -rf "$wor
 git clone -q --bare --no-local . "$work/src.git"
 commit=$(git rev-parse HEAD)
 if [ -n "$(git status --porcelain)" ]; then
-	# The working tree as a commit on HEAD, through a scratch index; pushed to the scratch clone only.
+	# The working tree as a commit on HEAD, through a scratch index; pushed to the scratch clone only (below).
 	cp "$(git rev-parse --git-path index)" "$work/index"
 	GIT_INDEX_FILE="$work/index" git add -A
 	tree=$(GIT_INDEX_FILE="$work/index" git write-tree)
 	commit=$(GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@localhost GIT_COMMITTER_NAME=test \
 		GIT_COMMITTER_EMAIL=test@localhost git commit-tree -p HEAD -m "Working tree" "$tree")
-	git push -q "$work/src.git" "$commit:refs/heads/working-tree"
 	echo "Uncommitted changes: building the working tree as it is (scratch commit $commit)."
 fi
+# The scratch clone's default branch: the commit built. F-Droid's tools start from origin/HEAD,
+# which a clone of a detached HEAD without any branch (CI's checkout of a tag) does not have.
+git push -q "$work/src.git" "$commit:refs/heads/fdroid-test"
+git -C "$work/src.git" symbolic-ref HEAD refs/heads/fdroid-test
 cp "$0" "$work/test-fdroid-build.sh"
 cp "fdroid/$APPID.yml" tools/check-android-apk.sh "$work/"
 
