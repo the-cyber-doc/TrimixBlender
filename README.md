@@ -165,7 +165,7 @@ tools/docker-dev.sh up -d --build         # any docker compose arguments: up -d,
 docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp <user>/trimix-blender:latest  # a released image
 ```
 
-All the browser tests against the real container (as `tools/test-e2e-stack.sh` in VideoNinja). It runs a throwaway
+All the browser tests against the real container. It runs a throwaway
 compose project on port 8090 (`E2E_PORT`), which is removed at the end:
 
 ```sh
@@ -324,7 +324,7 @@ The tag itself is made by `npm version` (CI and releases, below), which also wri
 
 ## CI and releases
 
-`.github/workflows/ci-cd.yml`, as in VideoNinja. Every push and pull request runs:
+`.github/workflows/ci-cd.yml`. Every push and pull request runs:
 
 1. the type checks, lint, unit tests (100 % coverage), the build and the browser tests;
 2. the Docker image for `linux/amd64` and `linux/arm64`, built but not published;

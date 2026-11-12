@@ -2,7 +2,7 @@
 # (at any path: the proxy strips its prefix, see the README).
 #   docker build -t trimix-blender .
 #
-# Base images: Docker Hardened Images (dhi.io), as VideoNinja; building needs
+# Base images: Docker Hardened Images (dhi.io); building needs
 # `docker login dhi.io` (a free Docker account). The final image is nginx and the built
 # files only: no Node, no build tool. Runs as UID 10001 on a read-only filesystem.
 

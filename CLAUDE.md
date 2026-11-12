@@ -1,6 +1,6 @@
 # Trimix Blender: working notes
 
-Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNinja/frontend.
+Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend.
 
 - **Physics lives only in `src/lib/formulas.ts`**: every formula commented with how and where from (an id of
   `src/lib/references.ts`; `misc.test.ts` checks each reference is cited there). Other modules call it.
@@ -33,6 +33,6 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
   changing the native build, npm scripts or the Node version (also pinned in the recipe, with its checksum).
 - Releases: `npm version x.y.z && git push --follow-tags`: the Android version is written in `android/app/build.gradle`
   (`scripts/android-version.js`) for F-Droid's update checker; never computed there from the tag.
-- CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
+- CI/CD: `.github/workflows/ci-cd.yml`. A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
   signed APK + AAB, image links, and the IPA if the optional iOS job succeeded); a release fails without the Android
   signing secrets (README, Signing).
