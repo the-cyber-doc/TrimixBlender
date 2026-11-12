@@ -32,7 +32,8 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend.
   `tools/test-fdroid-build.sh` (F-Droid's tools and image; CI job "F-Droid build"; APPSTORE.md, F-Droid). Run it after
   changing the native build, npm scripts or the Node version (also pinned in the recipe, with its checksum).
 - Releases: `npm version x.y.z && git push --follow-tags`: the Android version is written in `android/app/build.gradle`
-  (`scripts/android-version.js`) for F-Droid's update checker; never computed there from the tag.
+  (`scripts/android-version.js`, which also sets the F-Droid recipe's build) for F-Droid's update checker; never
+  computed there from the tag.
 - CI/CD: `.github/workflows/ci-cd.yml`. A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
   signed APK + AAB, image links, and the IPA if the optional iOS job succeeded); a release fails without the Android
   signing secrets (README, Signing).

@@ -332,7 +332,8 @@ The tag itself is made by `npm version` (CI and releases, below), which also wri
    F-Droid).
 
 Make a release with `npm version`. It sets the version in `package.json` and in `android/app/build.gradle` (versionName
-and versionCode, where F-Droid reads them: `scripts/android-version.js`), commits, and tags `v1.2.3`. Pushing the tag
+and versionCode, where F-Droid reads them: `scripts/android-version.js`) and in the F-Droid recipe
+(`fdroid/com.dolphinslabs.trimixblender.yml`), commits, and tags `v1.2.3`. Pushing the tag
 publishes the release:
 
 ```sh

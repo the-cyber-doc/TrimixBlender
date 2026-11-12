@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GRADLE, getVersion, setVersion, versionCode } from './android-version.js';
+import { GRADLE, RECIPE, getVersion, setRecipeVersion, setVersion, versionCode } from './android-version.js';
 
 const gradle = `    defaultConfig {
         versionCode 4
@@ -28,8 +28,19 @@ describe('Android version', () => {
 		expect(() => getVersion(gradle.replace('versionCode 4', 'versionCode 5'))).toThrow('versionCode 5');
 	});
 
+	it("sets the F-Droid recipe's build and current version", () => {
+		const recipe = readFileSync(RECIPE, 'utf8');
+		const out = setRecipeVersion(recipe, '1.2.3');
+		expect(out).toContain('  - versionName: 1.2.3\n    versionCode: 10203\n    commit: v1.2.3\n');
+		expect(out).toContain('CurrentVersion: 1.2.3\nCurrentVersionCode: 10203\n');
+		expect(out.split('\n')).toHaveLength(recipe.split('\n').length);
+		expect(() => setRecipeVersion('Builds: []', '1.2.3')).toThrow('no ');
+	});
+
 	it('matches package.json in the repository', () => {
 		const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 		expect(getVersion(readFileSync(GRADLE, 'utf8'))).toBe(version);
+		const recipe = readFileSync(RECIPE, 'utf8');
+		expect(setRecipeVersion(recipe, version)).toBe(recipe);
 	});
 });

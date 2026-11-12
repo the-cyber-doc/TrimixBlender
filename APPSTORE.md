@@ -236,11 +236,11 @@ selected, or submit from the website.
 F-Droid builds the app on its own servers from the sources of a release's tag, following a build recipe kept in its
 `fdroiddata` repository, and signs it with its own key, unless a reproducible build lets it publish yours.
 
-| Path                                        | What                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------- |
-| `fdroid/com.dolphinslabs.trimixblender.yml` | The recipe to submit to `fdroiddata` (`metadata/<app id>.yml` there)             |
-| `tools/test-fdroid-build.sh`                | Lints and builds the recipe with F-Droid's tools in its build server image       |
-| `scripts/android-version.js`                | `npm version`: the version in `android/app/build.gradle`, where F-Droid reads it |
+| Path                                        | What                                                                                                |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `fdroid/com.dolphinslabs.trimixblender.yml` | The recipe to submit to `fdroiddata` (`metadata/<app id>.yml` there)                                |
+| `tools/test-fdroid-build.sh`                | Lints and builds the recipe with F-Droid's tools in its build server image                          |
+| `scripts/android-version.js`                | `npm version`: the version in `android/app/build.gradle` (where F-Droid reads it) and in the recipe |
 
 **The recipe.** Node.js (the version of CI and the Docker build, its checksum checked) is installed by the `sudo`
 commands. F-Droid's source scanner runs next, on the sources as committed; then `npm ci` and `npm run build:native`
@@ -258,9 +258,9 @@ and `tools/check-android-apk.sh` on the APK. The APK and the logs land in `fdroi
 
 **Submit it** (once):
 
-1. Release a version made with `npm version` (the recipe's first build must be a tag whose `build.gradle` holds its
-   version: v0.0.4 does not), then set the recipe's `versionName`, `versionCode`, `commit` (the tag),
-   `CurrentVersion` and `CurrentVersionCode` to it and run `tools/test-fdroid-build.sh` again.
+1. Release a version with `npm version` (the recipe's first build must be a tag whose `build.gradle` holds its version:
+   v0.0.4 does not). `npm version` also sets the recipe's build (`versionName`, `versionCode`, `commit: v<version>`)
+   and `CurrentVersion` / `CurrentVersionCode`, in the tagged commit: the recipe is then ready to submit as it is.
 2. Commit the screenshots (`fastlane/metadata/android/<locale>/images/phoneScreenshots/`, now in `.gitignore`): F-Droid
    shows only what is in the repository at the tag. Optionally `changelogs/<versionCode>.txt` next to them.
 3. Fork <https://gitlab.com/fdroid/fdroiddata>, copy the recipe to `metadata/com.dolphinslabs.trimixblender.yml`, and
