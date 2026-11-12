@@ -28,6 +28,11 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend; structure from ../VideoNi
   `build-native/`, `NATIVE` in `#lib/about.js`: no service worker). Hard rules: no permission (the Android manifest
   removes them, `tools/check-android-apk.sh` checks the APK), no tracker / analytics / Google or Firebase SDK, no
   network use. Android toolchain: JDK 21 + SDK 36.
+- F-Droid: recipe `fdroid/com.dolphinslabs.trimixblender.yml` (keep in step with fdroiddata's), tested by
+  `tools/test-fdroid-build.sh` (F-Droid's tools and image; CI job "F-Droid build"; APPSTORE.md, F-Droid). Run it after
+  changing the native build, npm scripts or the Node version (also pinned in the recipe, with its checksum).
+- Releases: `npm version x.y.z && git push --follow-tags`: the Android version is written in `android/app/build.gradle`
+  (`scripts/android-version.js`) for F-Droid's update checker; never computed there from the tag.
 - CI/CD: `.github/workflows/ci-cd.yml` (VideoNinja pattern). A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
   signed APK + AAB, image links, and the IPA if the optional iOS job succeeded); a release fails without the Android
   signing secrets (README, Signing).

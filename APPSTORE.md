@@ -226,9 +226,53 @@ selected, or submit from the website.
 - **IzzyOnDroid** (<https://apt.izzysoft.de/fdroid/>): an F-Droid repository that takes the signed APK from the GitHub
   releases; ask for inclusion with an issue there. It reads the listing from `fastlane/metadata/android/` (the
   screenshots too, which would then have to be committed).
-- **F-Droid** (main repository): builds the app itself from the sources, and signs it with its own key (the same
-  update problem as Play, unless a reproducible build lets it publish your signature). More work: a merge request to
-  `fdroiddata` with a build recipe (Node and Gradle).
+- **F-Droid** (main repository): builds the app itself from the sources; see below.
 - **Android developer verification**: Google announced that, from 2026 onwards and country by country, apps installed
   on certified Android phones must come from a verified developer, sideloaded ones included. A Play Console account
   is verified; check the current status for the APK published on GitHub.
+
+## 5. F-Droid
+
+F-Droid builds the app on its own servers from the sources of a release's tag, following a build recipe kept in its
+`fdroiddata` repository, and signs it with its own key, unless a reproducible build lets it publish yours.
+
+| Path                                        | What                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `fdroid/com.dolphinslabs.trimixblender.yml` | The recipe to submit to `fdroiddata` (`metadata/<app id>.yml` there)             |
+| `tools/test-fdroid-build.sh`                | Lints and builds the recipe with F-Droid's tools in its build server image       |
+| `scripts/android-version.js`                | `npm version`: the version in `android/app/build.gradle`, where F-Droid reads it |
+
+**The recipe.** Node.js (the version of CI and the Docker build, its checksum checked) is installed by the `sudo`
+commands. F-Droid's source scanner runs next, on the sources as committed; then `npm ci` and `npm run build:native`
+(the `build` commands), then Gradle (`assembleRelease`, unsigned). npm installs the build tools' native binaries
+(esbuild, Rolldown), which the scanner would reject: they come after it, as F-Droid's reviewers accept for npm
+builds of a web app. `UpdateCheckMode: Tags` with `AutoUpdateMode: Version`: once the app is in, F-Droid finds each new
+tag `v1.2.3`, reads versionName and versionCode in `android/app/build.gradle` at that tag, and adds the build by itself.
+That is why the version is written there, by `npm version`, instead of being computed from the tag.
+
+**Test it.** `tools/test-fdroid-build.sh` (Docker, 10 to 20 minutes, the image is 11 GB) runs fdroiddata's own CI
+build job: `fdroid lint` and `fdroid rewritemeta` on the recipe, `fdroid checkupdates` (it must find the version in a
+tag), then `fdroid build --on-server` of the current commit, or of the working tree when it has uncommitted changes,
+and `tools/check-android-apk.sh` on the APK. The APK and the logs land in `fdroid-build/`. CI runs it on every push
+(job "F-Droid build"), and a release needs it to pass.
+
+**Submit it** (once):
+
+1. Release a version made with `npm version` (the recipe's first build must be a tag whose `build.gradle` holds its
+   version: v0.0.4 does not), then set the recipe's `versionName`, `versionCode`, `commit` (the tag),
+   `CurrentVersion` and `CurrentVersionCode` to it and run `tools/test-fdroid-build.sh` again.
+2. Commit the screenshots (`fastlane/metadata/android/<locale>/images/phoneScreenshots/`, now in `.gitignore`): F-Droid
+   shows only what is in the repository at the tag. Optionally `changelogs/<versionCode>.txt` next to them.
+3. Fork <https://gitlab.com/fdroid/fdroiddata>, copy the recipe to `metadata/com.dolphinslabs.trimixblender.yml`, and
+   open a merge request with the "App inclusion" template. Its CI runs the same jobs as the script; a reviewer may ask
+   for changes. Expect a few weeks.
+
+Afterwards, nothing to do for an update: tag with `npm version`, and F-Droid builds and publishes it, usually within a
+week. A merge request to `fdroiddata` is needed only when the build changes (another Node.js version in the recipe,
+other build commands). Keep the recipe here in step with the one in `fdroiddata`, so that CI keeps testing it.
+
+**Your signature on F-Droid (optional).** If F-Droid's APK is the same as the one on the GitHub release apart from the
+signature (a reproducible build), F-Droid can publish yours: add `Binaries:` (the release APK's URL, with `%v` for the
+version) and `AllowedAPKSigningKeys:` (your certificate's SHA-256) to the recipe. Users can then move between the
+GitHub and F-Droid versions without uninstalling. Not set up yet: first check that the two APKs match, with
+`apksigcopier compare` on the release's APK and the one from `tools/test-fdroid-build.sh` built at its tag.

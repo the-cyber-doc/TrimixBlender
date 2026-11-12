@@ -1,0 +1,35 @@
+Categories:
+  - Calculator
+  - Sports & Health
+License: GPL-3.0-only
+SourceCode: https://github.com/the-cyber-doc/TrimixBlender
+IssueTracker: https://github.com/the-cyber-doc/TrimixBlender/issues
+Changelog: https://github.com/the-cyber-doc/TrimixBlender/releases
+
+AutoName: Trimix Blender
+
+RepoType: git
+Repo: https://github.com/the-cyber-doc/TrimixBlender.git
+
+Builds:
+  - versionName: 0.0.4
+    versionCode: 4
+    commit: v0.0.4
+    subdir: android/app
+    sudo:
+      - curl -Lo /tmp/node.tar.gz https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.gz
+      - echo "0fd1eb7770598f52a21995edf6ed35fc690400fa437c2386af329519e9143132  /tmp/node.tar.gz"
+        | sha256sum -c
+      - tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1 --no-same-owner
+      - rm /tmp/node.tar.gz
+    gradle:
+      - yes
+    build:
+      - cd ../..
+      - npm ci
+      - APP_VERSION=v$$VERSION$$ APP_COMMIT=$(git rev-parse HEAD) npm run build:native
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
+CurrentVersion: 0.0.4
+CurrentVersionCode: 4

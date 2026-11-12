@@ -1,5 +1,6 @@
 {
 	"name": "trimix-blender",
+	"version": "0.0.4",
 	"private": true,
 	"type": "module",
 	"engines": {
@@ -21,6 +22,7 @@
 		"screenshots": "playwright test -c playwright.screenshots.config.ts",
 		"nist:fetch": "sh scripts/fetch-nist.sh",
 		"nist:fit": "node scripts/fit-compressibility.js",
+		"version": "node scripts/android-version.js && git add android/app/build.gradle",
 		"build:native": "APP_TARGET=native vite build && APP_TARGET=native node scripts/relative-index.js && cap sync"
 	},
 	"devDependencies": {

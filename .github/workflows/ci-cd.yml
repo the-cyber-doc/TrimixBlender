@@ -11,6 +11,8 @@ name: CI/CD Pipeline
 #     that release's images.
 # The Android and iOS apps (capacitor.config.ts) are built on every push too: the APK is
 # checked for permissions and trackers (none allowed: tools/check-android-apk.sh).
+# The Android app is also built as F-Droid builds it, with F-Droid's tools and build server image,
+# from the recipe to submit to F-Droid (fdroid/, tools/test-fdroid-build.sh).
 # The iOS app is optional: its job may fail (a warning, the run stays green) and the release
 # is then published without the IPA.
 # Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (Docker Hub, also for the dhi.io base images).
@@ -158,11 +160,14 @@ jobs:
             echo "No ANDROID_KEYSTORE_BASE64 secret: the APK and AAB are unsigned (not a release)."
           fi
 
-      # versionName and versionCode from the tag (android/app/build.gradle).
+      # versionName and versionCode: android/app/build.gradle, set by `npm version` (package.json).
+      - name: The app's version is the tag's
+        if: env.RELEASE == 'true'
+        run: node scripts/android-version.js --check "$GITHUB_REF_NAME"
+
       - name: Build the APK and the AAB
         working-directory: android
         env:
-          APP_VERSION: ${{ env.RELEASE == 'true' && github.ref_name || '' }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -194,6 +199,37 @@ jobs:
           name: android-app
           path: android-app
           if-no-files-found: error
+          retention-days: 7
+
+  # The F-Droid build: the recipe (fdroid/com.dolphinslabs.trimixblender.yml) linted and built for
+  # this commit by F-Droid's own tools in its build server image, as fdroiddata's CI does for a
+  # merge request; the update checker must find the version in the commit. A release needs it: a
+  # version F-Droid could not build would never reach F-Droid's users.
+  fdroid:
+    needs: test
+    name: F-Droid build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # F-Droid's image is about 11 GB: room made by removing the runner's unused toolchains.
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - name: F-Droid build
+        run: tools/test-fdroid-build.sh fdroid-build
+
+      - name: Upload the F-Droid build and its logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: fdroid-build
+          path: fdroid-build
+          if-no-files-found: ignore
           retention-days: 7
 
   # Optional: a failure here (build, missing or wrong Apple secrets) neither fails the run nor
@@ -442,11 +478,12 @@ jobs:
           echo "digest=$(docker buildx imagetools inspect "$ref" --format '{{ json .Manifest }}' | jq -r .digest)" >> "$GITHUB_OUTPUT"
 
   release:
-    needs: [test, android, ios, merge-and-push]
+    needs: [test, android, fdroid, ios, merge-and-push]
     # Waits for the iOS job but does not need it to succeed (the IPA is attached if built).
     if: >-
       !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.test.result == 'success' &&
-      needs.android.result == 'success' && needs.merge-and-push.result == 'success'
+      needs.android.result == 'success' && needs.fdroid.result == 'success' &&
+      needs.merge-and-push.result == 'success'
     name: GitHub release
     runs-on: ubuntu-latest
     permissions:

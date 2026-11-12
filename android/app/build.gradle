@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
 
-// The version: the release's tag (APP_VERSION=v1.2.3, as the web build: vite.config.ts), else
-// 0.0.0 (a development build). versionCode, which must grow with every upload to a store:
-// 1.2.3 → 10203 (minor and patch below 100).
-def appVersion = (System.getenv('APP_VERSION') ?: '').replaceFirst(/^v/, '')
-if (!(appVersion ==~ /\d+\.\d+\.\d+/)) appVersion = '0.0.0'
-def (major, minor, patch) = appVersion.tokenize('.')*.toInteger()
+// The version, written here (not computed) so that F-Droid's update checker can read it from the
+// release's tag (fdroid/com.dolphinslabs.trimixblender.yml). `npm version 1.2.3` sets it, from
+// package.json's version (scripts/android-version.js), and tags the commit; CI checks that a
+// release's tag matches it. The code must grow with every upload to a store: 1.2.3 gives
+// major * 10000 + minor * 100 + patch (minor and patch below 100).
 
 // Release signing, when the keystore is given (CI: secrets, see the README); otherwise the
 // release build is unsigned.
@@ -18,8 +17,8 @@ android {
         applicationId "com.dolphinslabs.trimixblender"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode Math.max(1, major * 10000 + minor * 100 + patch)
-        versionName appVersion
+        versionCode 4
+        versionName "0.0.4"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61

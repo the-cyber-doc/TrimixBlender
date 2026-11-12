@@ -13,3 +13,5 @@ release.jks
 # Store screenshots: generated (npm run screenshots, APPSTORE.md)
 /fastlane/metadata/android/*/images/phoneScreenshots/
 /fastlane/screenshots/
+# tools/test-fdroid-build.sh
+/fdroid-build

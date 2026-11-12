@@ -103,8 +103,9 @@ npm run icons            # after changing static/favicon.svg: the PWA, Android a
 From the command line, Android: `cd android && ./gradlew assembleRelease` (APK) or `bundleRelease` (AAB, for Google
 Play), then `tools/check-android-apk.sh app/build/outputs/apk/release/*.apk`.
 
-Versions: `APP_VERSION=v1.2.3` (as for the web build) gives version 1.2.3 and build number 10203
-(`major × 10000 + minor × 100 + patch`, which must grow with each store upload).
+Versions: Android's are written in `android/app/build.gradle` by `npm version` (CI and releases below): 1.2.3 has
+versionCode 10203 (`major × 10000 + minor × 100 + patch`, which must grow with each store upload). iOS gets the same
+numbers from the release's tag.
 
 ### Signing
 
@@ -316,20 +317,34 @@ At build time (`vite.config.ts`), the version comes from git:
   changes), or the build time (`20261106T1435`) when there is no git at all.
 
 The Docker image's build has no `.git`, so `tools/docker-dev.sh`, `tools/test-e2e-stack.sh` and the CI pass the version
-and commit as the `APP_VERSION` and `APP_COMMIT` build arguments.
+and commit as the `APP_VERSION` and `APP_COMMIT` build arguments; F-Droid's build passes them too (its recipe).
+
+The tag itself is made by `npm version` (CI and releases, below), which also writes the same version into
+`package.json` and `android/app/build.gradle`: the About page, the Android app and the iOS app always agree.
 
 ## CI and releases
 
 `.github/workflows/ci-cd.yml`, as in VideoNinja. Every push and pull request runs:
 
 1. the type checks, lint, unit tests (100 % coverage), the build and the browser tests;
-2. the Docker image for `linux/amd64` and `linux/arm64`, built but not published.
+2. the Docker image for `linux/amd64` and `linux/arm64`, built but not published;
+3. the Android app as F-Droid builds it, with F-Droid's own tools (`tools/test-fdroid-build.sh`, see APPSTORE.md,
+   F-Droid).
 
-Pushing a version tag also publishes the release:
+Make a release with `npm version`. It sets the version in `package.json` and in `android/app/build.gradle` (versionName
+and versionCode, where F-Droid reads them: `scripts/android-version.js`), commits, and tags `v1.2.3`. Pushing the tag
+publishes the release:
 
 ```sh
-git tag v1.2.3 && git push origin v1.2.3
+npm version 1.2.3            # or: npm version patch / minor / major
+git push --follow-tags
 ```
+
+`npm version` needs a clean working tree (commit first). The version must be `x.y.z` with minor and patch below 100,
+and higher than the last one (Android stores refuse a versionCode that does not grow): `scripts/android-version.js`
+stops `npm version` otherwise, before anything is committed or tagged (then undo its change to `package.json` with
+`git checkout package.json package-lock.json`). A release fails if its tag is not the version in
+`android/app/build.gradle` (a tag made by hand with `git tag`), or if F-Droid's tools cannot build it.
 
 - **Docker Hub:** `<user>/trimix-blender` with the tags `1.2.3`, `1.2`, `1` and `latest`. One multi-architecture
   image (amd64 + arm64), with its SBOM and build provenance.
