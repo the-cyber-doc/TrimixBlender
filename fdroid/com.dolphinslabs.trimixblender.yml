@@ -12,9 +12,9 @@ RepoType: git
 Repo: https://github.com/the-cyber-doc/TrimixBlender.git
 
 Builds:
-  - versionName: 0.0.4
-    versionCode: 4
-    commit: v0.0.4
+  - versionName: 0.0.5
+    versionCode: 5
+    commit: v0.0.5
     subdir: android/app
     sudo:
       - curl -Lo /tmp/node.tar.gz https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.gz
@@ -31,5 +31,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
-CurrentVersion: 0.0.4
-CurrentVersionCode: 4
+CurrentVersion: 0.0.5
+CurrentVersionCode: 5
