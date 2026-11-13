@@ -7,7 +7,7 @@
 # files only: no Node, no build tool. Runs as UID 10001 on a read-only filesystem.
 
 # The app (relative URLs: the same build in any folder).
-FROM dhi.io/node:26.13.0-alpine3.24-dev AS build
+FROM dhi.io/node:26.13.1-alpine3.24-dev AS build
 USER root
 ARG APP_VERSION=
 ARG APP_COMMIT=
