@@ -12,7 +12,8 @@ AutoName: Trimix Blender
 
 RepoType: git
 Repo: https://github.com/the-cyber-doc/TrimixBlender.git
-Binaries: https://github.com/the-cyber-doc/TrimixBlender/releases/download/v%v/trimix-blender-%v.apk
+Binaries: 
+  https://github.com/the-cyber-doc/TrimixBlender/releases/download/v%v/trimix-blender-%v.apk
 
 Builds:
   - versionName: 0.0.5
