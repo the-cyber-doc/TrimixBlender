@@ -15,7 +15,9 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend.
   `{placeholders}`, checked by `i18n.test.ts`); components read `t` from `#lib/i18n.js` (`fill()` for values).
   Not translated: chemical names, MOD/END, mix names (Air, Nx32), units, the references. A language change re-renders
   the app (`{#key}` in `+layout.svelte`), so `t` needs no reactivity. Flags (`Flag.svelte`) are fixed in both themes.
-- Store listings: `fastlane/metadata/`; screenshots: `npm run screenshots` (generated, ignored); see APPSTORE.md.
+- Store listings: texts only in `fastlane/listings.json` → `npm run listings` writes Play/App Store/F-Droid files in
+  `fastlane/metadata/` (never edit those; a test checks them); screenshots: `npm run screenshots` (generated,
+  ignored); `npm run store` does both; see APPSTORE.md.
 - Node 26 is under fnm: `export PATH=~/.local/share/fnm/node-versions/v26.12.1/installation/bin:$PATH`.
 - Before finishing: `npm run check && npm run lint && npm run test:coverage && npx playwright test`;
   for Docker changes also `tools/test-e2e-stack.sh` (and `--prefix /tools/blender`).

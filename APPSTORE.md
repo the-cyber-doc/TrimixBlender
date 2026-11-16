@@ -9,27 +9,49 @@ to the GitHub release (README, Signing).
 
 ## What is in the repository
 
-| Path                                              | What                                                                                                           |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `fastlane/metadata/android/<locale>/`             | Google Play listing: `title.txt`, `short_description.txt`, `full_description.txt`                              |
-| `fastlane/metadata/android/en-US/images/icon.png` | The 512 × 512 store icon                                                                                       |
-| `fastlane/metadata/ios/<locale>/`                 | App Store listing: `name.txt`, `subtitle.txt`, `description.txt`, `keywords.txt`, `promotional_text.txt`, URLs |
-| `fastlane/metadata/ios/*.txt`                     | App Store, all languages: copyright, categories (Sports, Utilities)                                            |
-| `PRIVACY.md`                                      | The privacy policy both stores require (its GitHub URL is in the listings)                                     |
-| `npm run screenshots`                             | Generates the screenshots (not committed, see below)                                                           |
+| Path                                              | What                                                                                                                                     |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `fastlane/listings.json`                          | **The listings' texts, in every language**: title, short and full description, and the locale codes                                      |
+| `fastlane/metadata/android/<locale>/`             | Google Play listing: `title.txt`, `short_description.txt`, `full_description.txt` (from the JSON)                                        |
+| `fastlane/metadata/android/en-US/images/icon.png` | The 512 × 512 store icon                                                                                                                 |
+| `fastlane/metadata/ios/<locale>/`                 | App Store listing: `name.txt`, `description.txt` (from the JSON); `subtitle.txt`, `keywords.txt`, `promotional_text.txt`, URLs (by hand) |
+| `fastlane/metadata/fdroid/<locale>/`              | F-Droid listing: `name.txt`, `summary.txt`, `description.txt` (from the JSON)                                                            |
+| `fastlane/metadata/ios/*.txt`                     | App Store, all languages: copyright, categories (Sports, Utilities)                                                                      |
+| `PRIVACY.md`                                      | The privacy policy both stores require (its GitHub URL is in the listings)                                                               |
+| `npm run listings`                                | Writes the listings' text files from the JSON (below)                                                                                    |
+| `npm run screenshots`                             | Generates the screenshots (not committed, see below)                                                                                     |
+| `npm run store`                                   | Both                                                                                                                                     |
 
 The listings exist in 8 languages, with each store's locale code:
 
-| App                | Google Play | App Store |
-| ------------------ | ----------- | --------- |
-| English (default)  | `en-US`     | `en-US`   |
-| French             | `fr-FR`     | `fr-FR`   |
-| German             | `de-DE`     | `de-DE`   |
-| Spanish            | `es-ES`     | `es-ES`   |
-| Italian            | `it-IT`     | `it`      |
-| Dutch              | `nl-NL`     | `nl-NL`   |
-| Japanese           | `ja-JP`     | `ja`      |
-| Simplified Chinese | `zh-CN`     | `zh-Hans` |
+| App                | Google Play, F-Droid | App Store |
+| ------------------ | -------------------- | --------- |
+| English (default)  | `en-US`              | `en-US`   |
+| French             | `fr-FR`              | `fr-FR`   |
+| German             | `de-DE`              | `de-DE`   |
+| Spanish            | `es-ES`              | `es-ES`   |
+| Italian            | `it-IT`              | `it`      |
+| Dutch              | `nl-NL`              | `nl-NL`   |
+| Japanese           | `ja-JP`              | `ja`      |
+| Simplified Chinese | `zh-CN`              | `zh-Hans` |
+
+### Texts: one source, `fastlane/listings.json`
+
+Each language has one title, one short description and one full description (an array of lines), shared by the three
+stores: edit them only in `fastlane/listings.json`, then `npm run listings` (`scripts/store-listings.js`) writes
+each store's files under its own names:
+
+| JSON                | Google Play             | App Store         | F-Droid           |
+| ------------------- | ----------------------- | ----------------- | ----------------- |
+| `title`             | `title.txt`             | `name.txt`        | `name.txt`        |
+| `short_description` | `short_description.txt` | (none)            | `summary.txt`     |
+| `full_description`  | `full_description.txt`  | `description.txt` | `description.txt` |
+
+The script checks the limits (title 30 characters, short description 80, full description 4000) and that each full
+description starts with the short description's first sentence, "No account, no ads, no tracker." in its language.
+F-Droid's summary drops the final full stop (`fdroid lint`). The App Store's subtitle (30 characters), keywords and
+promotional text have no equivalent in the other stores: they stay in `fastlane/metadata/ios/<locale>/`, edited by
+hand. Never edit the written files: `npm run test:unit` fails when they differ from the JSON.
 
 **Have every translation checked by a diver who is a native speaker** before publishing, the app's warnings first
 (`src/lib/locales/*.ts`), then the listings. They were drafted by an AI.
@@ -37,19 +59,25 @@ The listings exist in 8 languages, with each store's locale code:
 ### Screenshots
 
 `npm run screenshots` builds the app and takes, for each language, each area of the app (Available gases, Target
-mix, Mix to do) for a nitrox and a trimix blend: 6 per device and language, 144 in all
-(`playwright.screenshots.config.ts`, `tests/screenshots/store.spec.ts`).
+mix, Mix to do) for a nitrox and a trimix blend: 6 per device and language, 192 in all, a phone and the tablets for
+each store (`playwright.screenshots.config.ts`, `tests/screenshots/store.spec.ts`).
 
-| Device                  | Size (px)   | Written to                                                    |
-| ----------------------- | ----------- | ------------------------------------------------------------- |
-| Android phone           | 1080 × 1920 | `fastlane/metadata/android/<locale>/images/phoneScreenshots/` |
-| iPhone 6.9" (App Store) | 1320 × 2868 | `fastlane/screenshots/ios/<locale>/`                          |
-| iPad 13" (App Store)    | 2064 × 2752 | `fastlane/screenshots/ios/<locale>/`                          |
+| Device                            | Size (px)    | Written to                                                                            |
+| --------------------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| Android phone                     | 1320 × 2640  | `fastlane/metadata/android/<locale>/images/phoneScreenshots/`                         |
+| Android 7" tablet                 | 1200 × 1920  | `fastlane/metadata/android/<locale>/images/sevenInchScreenshots/`                     |
+| Android 10" tablet                | 2064 × 2752  | `fastlane/metadata/android/<locale>/images/tenInchScreenshots/` (links to the iPad's) |
+| iPhone 6.9" (App Store)           | 1320 × 2868  | `fastlane/screenshots/ios/<locale>/`                                                  |
+| iPad 13" (App Store)              | 2064 × 2752  | `fastlane/screenshots/ios/<locale>/`                                                  |
+| F-Droid: phone, 7" and 10" tablet | as Android's | `fastlane/metadata/fdroid/<locale>/images/`, the same folders (links to Android's)    |
 
-These are the sizes the stores require: Google Play takes 2 to 8 phone screenshots per language, each side from 320 to
-3840 px and the long side at most twice the short one. The App Store requires the 6.9" iPhone set and, because the app
-also runs on iPad, the 13" iPad set; it takes up to 10 per device and language. They are generated, so they are in
-`.gitignore` (about 25 MB); run the command again after any visible change.
+The Android phone screenshots show what the iPhone's show (same width), cut to 2:1: Google Play takes 2 to 8 phone
+screenshots per language, each side from 320 to 3840 px and the long side at most twice the short one, and the
+iPhone's are 2.17:1. The 7" tablet is a 600 × 960 dp screen; the 10" tablet is the iPad. A link is a relative symlink,
+not a copy: fastlane follows them, and `cp -rL` copies the files they point to. The App Store requires the 6.9" iPhone
+set and, because the app also runs on iPad, the 13" iPad set; it takes up to 10 per device and language. They are
+generated, so they are in `.gitignore` (about 35 MB); run the command again after any visible change, or `npm run
+store` after a change of the texts as well (README, Store listings and screenshots).
 
 ### Still to make by hand
 
@@ -117,8 +145,8 @@ Google signs what users install with the **app signing key**, which it keeps.
 
 **Grow users > Store presence > Main store listing**: fill English, then **Manage translations > Add your own
 translations**, and tick French, German, Spanish, Italian, Dutch, Japanese, Chinese (Simplified). For each: title,
-short description, full description from `fastlane/metadata/android/<locale>/`, the phone screenshots, and the feature
-graphic. Do not use Google's machine translation of the listing: ours is checked and has the right diving terms.
+short description, full description from `fastlane/metadata/android/<locale>/`, the phone, 7" and 10" tablet
+screenshots, and the feature graphic. Do not use Google's machine translation of the listing: ours is checked and has the right diving terms.
 
 Faster, and repeatable: upload them all with **fastlane** (below).
 
@@ -144,7 +172,7 @@ account** and a JSON key for it; in Play Console > **Users and permissions**, in
 the rights to edit the listing and release to testing tracks. Keep the JSON out of the repository.
 
 ```sh
-npm run screenshots   # the phone screenshots, into fastlane/metadata/android/
+npm run screenshots   # the phone and tablet screenshots, into fastlane/metadata/android/
 # Listings and screenshots only:
 fastlane supply --package_name com.dolphinslabs.trimixblender --json_key ~/keys/play.json \
   --metadata_path fastlane/metadata/android --skip_upload_apk --skip_upload_aab --skip_upload_changelogs
@@ -241,6 +269,12 @@ F-Droid builds the app on its own servers from the sources of a release's tag, f
 | `fdroid/com.dolphinslabs.trimixblender.yml` | The recipe to submit to `fdroiddata` (`metadata/<app id>.yml` there)                                |
 | `tools/test-fdroid-build.sh`                | Lints and builds the recipe with F-Droid's tools in its build server image                          |
 | `scripts/android-version.js`                | `npm version`: the version in `android/app/build.gradle` (where F-Droid reads it) and in the recipe |
+| `fastlane/metadata/fdroid/<locale>/`        | The listing in F-Droid's names, `name.txt`, `summary.txt`, `description.txt`, and `images/`         |
+
+**The listing.** F-Droid reads it from the sources at the tag, in `fastlane/metadata/android/<locale>/` (the same
+texts as Google Play's). `fastlane/metadata/fdroid/<locale>/` holds the same texts and screenshots under the names of
+F-Droid's own metadata, for a listing kept in `fdroiddata` instead (`metadata/com.dolphinslabs.trimixblender/<locale>/`
+there; copy the screenshots with `cp -rL`, they are links). Both come from `fastlane/listings.json` (Texts, above).
 
 **The recipe.** Node.js (the version of CI and the Docker build, its checksum checked) is installed by the `sudo`
 commands. F-Droid's source scanner runs next, on the sources as committed; then `npm ci` and `npm run build:native`
@@ -261,8 +295,9 @@ and `tools/check-android-apk.sh` on the APK. The APK and the logs land in `fdroi
 1. Release a version with `npm version` (the recipe's first build must be a tag whose `build.gradle` holds its version:
    v0.0.4 does not). `npm version` also sets the recipe's build (`versionName`, `versionCode`, `commit: v<version>`)
    and `CurrentVersion` / `CurrentVersionCode`, in the tagged commit: the recipe is then ready to submit as it is.
-2. Commit the screenshots (`fastlane/metadata/android/<locale>/images/phoneScreenshots/`, now in `.gitignore`): F-Droid
-   shows only what is in the repository at the tag. Optionally `changelogs/<versionCode>.txt` next to them.
+2. Commit the screenshots (`fastlane/metadata/android/<locale>/images/*Screenshots/`, now in `.gitignore`) as files,
+   not links (`cp -rL`: the 10" ones link to the iPad's): F-Droid shows only what is in the repository at the tag.
+   Optionally `changelogs/<versionCode>.txt` next to them.
 3. Fork <https://gitlab.com/fdroid/fdroiddata>, copy the recipe to `metadata/com.dolphinslabs.trimixblender.yml`, and
    open a merge request with the "App inclusion" template. Its CI runs the same jobs as the script; a reviewer may ask
    for changes. Expect a few weeks.

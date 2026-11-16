@@ -1,3 +1,5 @@
+No account, no ads, no tracker.
+
 Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how much oxygen, then helium, then top-up gas to add to a cylinder, and the pressure to read on the gauge at each step.
 
 • Available gases: register your O2, helium and air banks with their pressure. The blend uses the lowest one that works, or the one you choose.
@@ -10,6 +12,6 @@ Trimix Blender works out partial-pressure blends of air, nitrox and trimix: how 
 • Metric or imperial units: bar or psi, litres or cu ft, metres or feet, °C or °F.
 • 8 languages: English, French, German, Spanish, Italian, Dutch, Japanese and Simplified Chinese.
 
-Private by design: the app works entirely on your device. It needs no network, asks for no permission, and has no ads and no tracker. Free and open source (GNU GPL v3).
+Private by design: the app works entirely on your device. It needs no network and asks for no permission. Free and open source (GNU GPL v3).
 
 Gas blending is dangerous. Use this app only if you are trained to blend gases, and always analyse the final mix before diving it.

@@ -103,6 +103,21 @@ npm run icons            # after changing static/favicon.svg: the PWA, Android a
 From the command line, Android: `cd android && ./gradlew assembleRelease` (APK) or `bundleRelease` (AAB, for Google
 Play), then `tools/check-android-apk.sh app/build/outputs/apk/release/*.apk`.
 
+### Store listings and screenshots
+
+The texts of the Google Play, App Store and F-Droid listings (title, short and full description, in every language)
+have a single source, `fastlane/listings.json`; the screenshots are taken from the app (phone and tablets for each
+store). Both are written into `fastlane/` (details: [APPSTORE.md](APPSTORE.md)):
+
+```sh
+npm run listings       # after editing fastlane/listings.json: each store's text files
+npm run screenshots    # after a change in the UI: every screenshot, each language, phone and tablets
+npm run store          # both, after any change of the texts or the UI: everything ready to upload
+```
+
+Commit the written text files with the JSON (`npm run test:unit` fails when they differ); the screenshots are
+generated and not committed. `npx playwright install chromium` first if Playwright has no browser yet.
+
 Versions: Android's are written in `android/app/build.gradle` by `npm version` (CI and releases below): 1.2.3 has
 versionCode 10203 (`major × 10000 + minor × 100 + patch`, which must grow with each store upload). iOS gets the same
 numbers from the release's tag.

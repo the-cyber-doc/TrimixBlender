@@ -1,3 +1,5 @@
+Sans compte, sans pub, sans traceur.
+
 Trimix Blender calcule les mélanges par pressions partielles d’air, de nitrox et de trimix : combien d’oxygène, puis d’hélium, puis de gaz de complément ajouter dans un bloc, et la pression à lire au manomètre à chaque étape.
 
 • Gaz disponibles : enregistrez vos tampons d’O2, d’hélium et d’air avec leur pression. Le mélange utilise le plus bas qui convient, ou celui que vous choisissez.
@@ -10,6 +12,6 @@ Trimix Blender calcule les mélanges par pressions partielles d’air, de nitrox
 • Unités métriques ou impériales : bar ou psi, litres ou cu ft, mètres ou pieds, °C ou °F.
 • 8 langues : anglais, français, allemand, espagnol, italien, néerlandais, japonais et chinois simplifié.
 
-Respect de la vie privée : l’application fonctionne entièrement sur votre appareil. Elle n’utilise pas le réseau, ne demande aucune autorisation, et n’a ni publicité ni traceur. Gratuite et libre (GNU GPL v3).
+Respect de la vie privée : l’application fonctionne entièrement sur votre appareil. Elle n’utilise pas le réseau et ne demande aucune autorisation. Gratuite et libre (GNU GPL v3).
 
 Le gonflage de mélanges est dangereux. N’utilisez cette application que si vous êtes formé au gonflage, et analysez toujours le mélange final avant de plonger avec.

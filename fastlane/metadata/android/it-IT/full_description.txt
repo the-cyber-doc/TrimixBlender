@@ -1,3 +1,5 @@
+Senza account, pubblicità né tracker.
+
 Trimix Blender calcola le miscele per pressioni parziali di aria, nitrox e trimix: quanto ossigeno, poi elio, poi gas di rabbocco aggiungere in una bombola, e la pressione da leggere sul manometro a ogni passo.
 
 • Gas disponibili: registra i tuoi pacchi di O2, elio e aria con la loro pressione. La miscela usa il più basso che basta, o quello che scegli.
@@ -10,6 +12,6 @@ Trimix Blender calcola le miscele per pressioni parziali di aria, nitrox e trimi
 • Unità metriche o imperiali: bar o psi, litri o cu ft, metri o piedi, °C o °F.
 • 8 lingue: inglese, francese, tedesco, spagnolo, italiano, olandese, giapponese e cinese semplificato.
 
-Privacy per scelta: l’app funziona interamente sul tuo dispositivo. Non usa la rete, non chiede alcun permesso, e non ha pubblicità né tracciamento. Gratuita e open source (GNU GPL v3).
+Privacy per scelta: l’app funziona interamente sul tuo dispositivo. Non usa la rete e non chiede alcun permesso. Gratuita e open source (GNU GPL v3).
 
 Miscelare gas è pericoloso. Usa questa app solo se sei addestrato a miscelare gas, e analizza sempre la miscela finale prima di immergerti.

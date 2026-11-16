@@ -1,30 +1,53 @@
 import { test, type Page } from '@playwright/test';
+import { mkdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { relative } from 'node:path';
 
 // Store screenshots (playwright.screenshots.config.ts, `npm run screenshots`): for each language,
 // device and blend (nitrox, trimix), one screenshot per area of the app, that area open and the
-// others closed. Written into fastlane's folders (APPSTORE.md):
-//   Google Play: fastlane/metadata/android/<locale>/images/phoneScreenshots/
+// others closed. Written into fastlane's folders (APPSTORE.md), a phone and the tablets for each store:
+//   Google Play: fastlane/metadata/android/<locale>/images/phoneScreenshots/, sevenInchScreenshots/,
+//                tenInchScreenshots/ (links to the iPad's)
 //   App Store:   fastlane/screenshots/ios/<locale>/ (iPhone 6.9" and iPad 13", told apart by size)
+//   F-Droid:     fastlane/metadata/fdroid/<locale>/images/, the same three folders as Google Play's
+//                (links to its screenshots)
+// A link is a relative symlink, not a copy (fastlane follows them; `cp -rL` copies what they point to).
 
-/** The app's language, and its locale code in each store. */
-const LANGUAGES = [
-	{ code: 'en', play: 'en-US', apple: 'en-US' },
-	{ code: 'fr', play: 'fr-FR', apple: 'fr-FR' },
-	{ code: 'de', play: 'de-DE', apple: 'de-DE' },
-	{ code: 'es', play: 'es-ES', apple: 'es-ES' },
-	{ code: 'it', play: 'it-IT', apple: 'it' },
-	{ code: 'nl', play: 'nl-NL', apple: 'nl-NL' },
-	{ code: 'ja', play: 'ja-JP', apple: 'ja' },
-	{ code: 'zh', play: 'zh-CN', apple: 'zh-Hans' }
-];
+/** The app's language, and its locale code in each store (fastlane/listings.json). */
+type Language = { app: string; play: string; apple: string; fdroid: string };
+const LANGUAGES: Language[] = JSON.parse(readFileSync('fastlane/listings.json', 'utf8'));
 
-/** Viewport × scale = the image: Google Play phone 1080 × 1920 (at most 2:1); App Store iPhone
- * 6.9" 1320 × 2868 and iPad 13" 2064 × 2752 (the sizes App Store Connect requires). */
+const play = (folder: string) => (l: Language) => `fastlane/metadata/android/${l.play}/images/${folder}`;
+const fdroid = (folder: string) => (l: Language) => `fastlane/metadata/fdroid/${l.fdroid}/images/${folder}`;
+const apple = (l: Language) => `fastlane/screenshots/ios/${l.apple}`;
+
+/** Viewport × scale = the image, written in the first folder and linked from the others: App Store
+ * iPhone 6.9" 1320 × 2868 and iPad 13" 2064 × 2752 (the sizes App Store Connect requires); Google
+ * Play phone 1320 × 2640, the iPhone's view cut to the 2:1 Play accepts at most (the iPhone's is
+ * 2.17:1), and 7" tablet 1200 × 1920 (a 600 × 960 dp tablet); Play's 10" tablet is the iPad. */
 const DEVICES = [
-	{ name: 'android', store: 'play', width: 360, height: 640, scale: 3, mobile: true },
-	{ name: 'iphone', store: 'apple', width: 440, height: 956, scale: 3, mobile: true },
-	{ name: 'ipad', store: 'apple', width: 1032, height: 1376, scale: 2, mobile: true }
-] as const;
+	{
+		name: 'android',
+		width: 440,
+		height: 880,
+		scale: 3,
+		folders: [play('phoneScreenshots'), fdroid('phoneScreenshots')]
+	},
+	{
+		name: 'tablet',
+		width: 600,
+		height: 960,
+		scale: 2,
+		folders: [play('sevenInchScreenshots'), fdroid('sevenInchScreenshots')]
+	},
+	{ name: 'iphone', width: 440, height: 956, scale: 3, folders: [apple] },
+	{
+		name: 'ipad',
+		width: 1032,
+		height: 1376,
+		scale: 2,
+		folders: [apple, play('tenInchScreenshots'), fdroid('tenInchScreenshots')]
+	}
+];
 
 const AREAS = ['gases', 'target', 'mix'] as const;
 
@@ -44,10 +67,11 @@ const BLENDS = {
 	}
 } as const;
 
-function path(device: (typeof DEVICES)[number], language: (typeof LANGUAGES)[number], file: string) {
-	return device.store === 'play'
-		? `fastlane/metadata/android/${language.play}/images/phoneScreenshots/${file}`
-		: `fastlane/screenshots/ios/${language.apple}/${file}`;
+/** Links `file` in the folder `link` to the same file in `target`: a relative symlink. */
+function link(target: string, folder: string, file: string) {
+	mkdirSync(folder, { recursive: true });
+	rmSync(`${folder}/${file}`, { force: true });
+	symlinkSync(relative(folder, `${target}/${file}`), `${folder}/${file}`);
 }
 
 /** Opens one area (by its position) and closes the others. */
@@ -65,12 +89,12 @@ test.describe.configure({ mode: 'parallel' });
 
 for (const device of DEVICES) {
 	for (const language of LANGUAGES) {
-		test(`${device.name} ${language.code}`, async ({ browser }) => {
+		test(`${device.name} ${language.app}`, async ({ browser }) => {
 			const context = await browser.newContext({
 				viewport: { width: device.width, height: device.height },
 				deviceScaleFactor: device.scale,
-				isMobile: device.mobile,
-				hasTouch: device.mobile,
+				isMobile: true,
+				hasTouch: true,
 				colorScheme: 'light',
 				serviceWorkers: 'block'
 			});
@@ -78,9 +102,9 @@ for (const device of DEVICES) {
 			await page.addInitScript((code) => {
 				if (!localStorage.getItem('blender.preferences'))
 					localStorage.setItem('blender.preferences', JSON.stringify({ language: code }));
-			}, language.code);
+			}, language.app);
 			await page.goto('./');
-			await page.locator(`html[lang="${language.code}"]`).waitFor();
+			await page.locator(`html[lang="${language.app}"]`).waitFor();
 			let n = 1;
 			for (const [kind, blend] of Object.entries(BLENDS)) {
 				await showArea(page, 1);
@@ -100,7 +124,9 @@ for (const device of DEVICES) {
 						window.scrollTo(0, top);
 					}, area === 'mix');
 					const file = `${n++}_${device.name}-${area}-${kind}.png`;
-					await page.screenshot({ path: path(device, language, file), animations: 'disabled', caret: 'hide' });
+					const [first, ...others] = device.folders.map((folder) => folder(language));
+					await page.screenshot({ path: `${first}/${file}`, animations: 'disabled', caret: 'hide' });
+					for (const folder of others) link(first, folder, file);
 				}
 			}
 			await context.close();

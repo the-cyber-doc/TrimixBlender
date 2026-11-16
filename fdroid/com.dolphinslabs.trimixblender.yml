@@ -2,6 +2,8 @@ Categories:
   - Calculator
   - Sports & Health
 License: GPL-3.0-only
+AuthorName: The Cyber Doc
+AuthorEmail: thecyberdoc.fdroid.izief9@dolphinslabs.com
 SourceCode: https://github.com/the-cyber-doc/TrimixBlender
 IssueTracker: https://github.com/the-cyber-doc/TrimixBlender/issues
 Changelog: https://github.com/the-cyber-doc/TrimixBlender/releases
@@ -10,6 +12,7 @@ AutoName: Trimix Blender
 
 RepoType: git
 Repo: https://github.com/the-cyber-doc/TrimixBlender.git
+Binaries: https://github.com/the-cyber-doc/TrimixBlender/releases/download/v%v/trimix-blender-%v.apk
 
 Builds:
   - versionName: 0.0.5
@@ -28,6 +31,8 @@ Builds:
       - cd ../..
       - npm ci
       - APP_VERSION=v$$VERSION$$ APP_COMMIT=$(git rev-parse HEAD) npm run build:native
+
+AllowedAPKSigningKeys: e7d8dd380e29c90d03b7427a0f266dea10113856a4f1e14d9390e060cf738525
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
