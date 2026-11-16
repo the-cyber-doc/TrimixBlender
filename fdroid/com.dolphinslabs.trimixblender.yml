@@ -16,9 +16,9 @@ Binaries:
   https://github.com/the-cyber-doc/TrimixBlender/releases/download/v%v/trimix-blender-%v.apk
 
 Builds:
-  - versionName: 0.0.6
-    versionCode: 6
-    commit: v0.0.6
+  - versionName: 0.0.7
+    versionCode: 7
+    commit: v0.0.7
     subdir: android/app
     sudo:
       - curl -Lo /tmp/node.tar.gz https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.gz
@@ -37,5 +37,5 @@ AllowedAPKSigningKeys: e7d8dd380e29c90d03b7427a0f266dea10113856a4f1e14d9390e060c
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
-CurrentVersion: 0.0.6
-CurrentVersionCode: 6
+CurrentVersion: 0.0.7
+CurrentVersionCode: 7
