@@ -19,10 +19,9 @@ function git(command: string): string | undefined {
 const dirty = git('status --porcelain') ? '-dirty' : '';
 const tag = dirty ? undefined : git('describe --tags --exact-match');
 const APP_VERSION = (process.env.APP_VERSION || tag || 'dev').replace(/^v/, '');
-// Build date from the commit, not the clock (same on every machine)
-const BUILD_DATE = process.env.SOURCE_DATE_EPOCH
-	? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
-	: (git('log -1 --format=%cI') ?? new Date().toISOString());
+// Build date: the commit's time (or SOURCE_DATE_EPOCH), always in UTC, so every build gets the same value
+const epoch = process.env.SOURCE_DATE_EPOCH || git('log -1 --format=%ct');
+const BUILD_DATE = (epoch ? new Date(Number(epoch) * 1000) : new Date()).toISOString()
 // `npm run build:native` (APP_TARGET=native): the web build inside the Android and iOS apps
 // (capacitor.config.ts), into build-native/. Its files ship in the app: no service worker
 // and no precompressed copies; otherwise the same app.
