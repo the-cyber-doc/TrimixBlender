@@ -207,8 +207,9 @@ jobs:
   # version F-Droid could not build would never reach F-Droid's users.
   fdroid:
     needs: test
-    name: F-Droid build
+    name: F-Droid build (optional)
     runs-on: ubuntu-latest
+    continue-on-error: true
     timeout-minutes: 60
     permissions:
       contents: read
