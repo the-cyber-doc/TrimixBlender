@@ -8,3 +8,5 @@ coverage/
 static/
 scripts/nist/
 src/lib/compressibility-coefficients.ts
+# Kept as in fdroiddata (F-Droid's own format), not ours.
+fdroid/com.dolphinslabs.trimixblender.yml

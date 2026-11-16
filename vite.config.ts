@@ -21,8 +21,8 @@ const tag = dirty ? undefined : git('describe --tags --exact-match');
 const APP_VERSION = (process.env.APP_VERSION || tag || 'dev').replace(/^v/, '');
 // Build date from the commit, not the clock (same on every machine)
 const BUILD_DATE = process.env.SOURCE_DATE_EPOCH
-    ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
-    : (git('log -1 --format=%cI') ?? new Date().toISOString());
+	? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
+	: (git('log -1 --format=%cI') ?? new Date().toISOString());
 // `npm run build:native` (APP_TARGET=native): the web build inside the Android and iOS apps
 // (capacitor.config.ts), into build-native/. Its files ship in the app: no service worker
 // and no precompressed copies; otherwise the same app.
@@ -47,7 +47,7 @@ export default defineConfig({
 	},
 	plugins: [
 		sveltekit({
-      version: { name: APP_COMMIT },   // or APP_VERSION; anything that doesn't depend on the tim
+			version: { name: APP_COMMIT }, // or APP_VERSION; anything that doesn't depend on the tim
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries.
 				runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
