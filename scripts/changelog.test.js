@@ -6,12 +6,11 @@ const listing = {
 	app: 'en',
 	play: 'en-US',
 	apple: 'en-US',
-	fdroid: 'en-US',
 	title: 'Trimix Blender',
 	short_description: 'No account, no ads, no tracker.',
 	full_description: ['No account, no ads, no tracker.']
 };
-const fr = { ...listing, app: 'fr', play: 'fr-FR', apple: 'fr-FR', fdroid: 'fr-FR' };
+const fr = { ...listing, app: 'fr', play: 'fr-FR', apple: 'fr-FR' };
 
 describe('changelog', () => {
 	it('checks the versions and the texts', () => {
@@ -40,15 +39,11 @@ describe('changelog', () => {
 		];
 		expect(files(changelog, [listing, fr])).toEqual({
 			'fastlane/metadata/android/en-US/changelogs/10203.txt': 'New.\nFixed.\n',
-			'fastlane/metadata/fdroid/en-US/changelogs/10203.txt': 'New.\nFixed.\n',
 			'fastlane/metadata/ios/en-US/release_notes.txt': 'New.\nFixed.\n',
 			'fastlane/metadata/android/fr-FR/changelogs/10203.txt': 'Nouveau.\nCorrigé.\n',
-			'fastlane/metadata/fdroid/fr-FR/changelogs/10203.txt': 'Nouveau.\nCorrigé.\n',
 			'fastlane/metadata/ios/fr-FR/release_notes.txt': 'Nouveau.\nCorrigé.\n',
 			'fastlane/metadata/android/en-US/changelogs/10000.txt': 'First.\n',
-			'fastlane/metadata/fdroid/en-US/changelogs/10000.txt': 'First.\n',
-			'fastlane/metadata/android/fr-FR/changelogs/10000.txt': 'Première.\n',
-			'fastlane/metadata/fdroid/fr-FR/changelogs/10000.txt': 'Première.\n'
+			'fastlane/metadata/android/fr-FR/changelogs/10000.txt': 'Première.\n'
 		});
 	});
 

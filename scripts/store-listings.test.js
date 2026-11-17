@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { LIMITS, check, files, load, stale, summary } from './store-listings.js';
+import { LIMITS, check, files, load, stale } from './store-listings.js';
 
 const listing = {
 	app: 'en',
 	play: 'en-US',
 	apple: 'en-US',
-	fdroid: 'en-US',
 	title: 'Trimix Blender',
 	short_description: 'No account, no ads, no tracker. Blending.',
 	full_description: ['No account, no ads, no tracker.', '', 'Blending.']
@@ -36,12 +35,8 @@ describe('store listings', () => {
 			'fastlane/metadata/android/en-US/short_description.txt': 'No account, no ads, no tracker. Blending.\n',
 			'fastlane/metadata/android/en-US/full_description.txt': full,
 			'fastlane/metadata/ios/en-US/name.txt': 'Trimix Blender\n',
-			'fastlane/metadata/ios/en-US/description.txt': full,
-			'fastlane/metadata/fdroid/en-US/name.txt': 'Trimix Blender\n',
-			'fastlane/metadata/fdroid/en-US/summary.txt': 'No account, no ads, no tracker. Blending\n',
-			'fastlane/metadata/fdroid/en-US/description.txt': full
+			'fastlane/metadata/ios/en-US/description.txt': full
 		});
-		expect(summary('配气。')).toBe('配气');
 	});
 
 	it('has the repository files as in fastlane/listings.json', () => {

@@ -3,7 +3,6 @@
 		"app": "en",
 		"play": "en-US",
 		"apple": "en-US",
-		"fdroid": "en-US",
 		"title": "Trimix Blender",
 		"short_description": "No account, no ads, no tracker. Partial-pressure blending of nitrox and trimix.",
 		"full_description": [
@@ -30,7 +29,6 @@
 		"app": "fr",
 		"play": "fr-FR",
 		"apple": "fr-FR",
-		"fdroid": "fr-FR",
 		"title": "Trimix Blender",
 		"short_description": "Sans compte, sans pub, sans traceur. Nitrox et trimix par pressions partielles.",
 		"full_description": [
@@ -57,7 +55,6 @@
 		"app": "de",
 		"play": "de-DE",
 		"apple": "de-DE",
-		"fdroid": "de-DE",
 		"title": "Trimix Blender",
 		"short_description": "Ohne Konto, Werbung und Tracker. Nitrox und Trimix nach Partialdruck mischen.",
 		"full_description": [
@@ -84,7 +81,6 @@
 		"app": "es",
 		"play": "es-ES",
 		"apple": "es-ES",
-		"fdroid": "es-ES",
 		"title": "Trimix Blender",
 		"short_description": "Sin cuenta, sin anuncios, sin rastreo. Nitrox y trimix por presiones parciales.",
 		"full_description": [
@@ -111,7 +107,6 @@
 		"app": "it",
 		"play": "it-IT",
 		"apple": "it",
-		"fdroid": "it-IT",
 		"title": "Trimix Blender",
 		"short_description": "Senza account, pubblicità né tracker. Nitrox e trimix per pressioni parziali.",
 		"full_description": [
@@ -138,7 +133,6 @@
 		"app": "nl",
 		"play": "nl-NL",
 		"apple": "nl-NL",
-		"fdroid": "nl-NL",
 		"title": "Trimix Blender",
 		"short_description": "Geen account, reclame of tracker. Nitrox en trimix mengen op partiële druk.",
 		"full_description": [
@@ -165,7 +159,6 @@
 		"app": "ja",
 		"play": "ja-JP",
 		"apple": "ja",
-		"fdroid": "ja-JP",
 		"title": "Trimix Blender",
 		"short_description": "アカウント不要、広告なし、トラッカーなし。ナイトロックスとトライミックスの分圧ブレンド計算。",
 		"full_description": [
@@ -192,7 +185,6 @@
 		"app": "zh",
 		"play": "zh-CN",
 		"apple": "zh-Hans",
-		"fdroid": "zh-CN",
 		"title": "Trimix Blender",
 		"short_description": "无需账户，无广告，无追踪器。高氧（Nitrox）与三混气（Trimix）分压配气。",
 		"full_description": [

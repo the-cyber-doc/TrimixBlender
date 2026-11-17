@@ -8,16 +8,14 @@ import { relative } from 'node:path';
 //   Google Play: fastlane/metadata/android/<locale>/images/phoneScreenshots/, sevenInchScreenshots/,
 //                tenInchScreenshots/ (links to the iPad's)
 //   App Store:   fastlane/screenshots/ios/<locale>/ (iPhone 6.9" and iPad 13", told apart by size)
-//   F-Droid:     fastlane/metadata/fdroid/<locale>/images/, the same three folders as Google Play's
-//                (links to its screenshots)
+//   F-Droid reads Google Play's, from the sources at the release's tag.
 // A link is a relative symlink, not a copy (fastlane follows them; `cp -rL` copies what they point to).
 
 /** The app's language, and its locale code in each store (fastlane/listings.json). */
-type Language = { app: string; play: string; apple: string; fdroid: string };
+type Language = { app: string; play: string; apple: string };
 const LANGUAGES: Language[] = JSON.parse(readFileSync('fastlane/listings.json', 'utf8'));
 
 const play = (folder: string) => (l: Language) => `fastlane/metadata/android/${l.play}/images/${folder}`;
-const fdroid = (folder: string) => (l: Language) => `fastlane/metadata/fdroid/${l.fdroid}/images/${folder}`;
 const apple = (l: Language) => `fastlane/screenshots/ios/${l.apple}`;
 
 /** Viewport × scale = the image, written in the first folder and linked from the others: App Store
@@ -30,14 +28,14 @@ const DEVICES = [
 		width: 440,
 		height: 880,
 		scale: 3,
-		folders: [play('phoneScreenshots'), fdroid('phoneScreenshots')]
+		folders: [play('phoneScreenshots')]
 	},
 	{
 		name: 'tablet',
 		width: 600,
 		height: 960,
 		scale: 2,
-		folders: [play('sevenInchScreenshots'), fdroid('sevenInchScreenshots')]
+		folders: [play('sevenInchScreenshots')]
 	},
 	{ name: 'iphone', width: 440, height: 956, scale: 3, folders: [apple] },
 	{
@@ -45,7 +43,7 @@ const DEVICES = [
 		width: 1032,
 		height: 1376,
 		scale: 2,
-		folders: [apple, play('tenInchScreenshots'), fdroid('tenInchScreenshots')]
+		folders: [apple, play('tenInchScreenshots')]
 	}
 ];
 

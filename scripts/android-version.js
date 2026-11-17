@@ -42,7 +42,7 @@ export function setRecipeVersion(recipe, version) {
 	const fields = [
 		[/^( {2}- versionName: ).*$/m, `$1${version}`],
 		[/^( {4}versionCode: )\d+$/m, `$1${code}`],
-		// [/^( {4}commit: ).*$/m, `$1v${version}`], // Commit should be the hash of the release (not the version) so it cannot be know here
+		[/^( {4}commit: ).*$/m, `$1v${version}`],
 		[/^(CurrentVersion: ).*$/m, `$1${version}`],
 		[/^(CurrentVersionCode: )\d+$/m, `$1${code}`]
 	];

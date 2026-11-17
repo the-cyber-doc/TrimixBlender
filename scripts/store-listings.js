@@ -4,8 +4,7 @@
 //   Google Play: fastlane/metadata/android/<play>/title.txt, short_description.txt, full_description.txt
 //   App Store:   fastlane/metadata/ios/<apple>/name.txt, description.txt (its subtitle, keywords and
 //                promotional text are App Store only, written by hand there)
-//   F-Droid:     fastlane/metadata/fdroid/<fdroid>/name.txt, summary.txt, description.txt (fdroiddata's
-//                localized metadata, metadata/com.dolphinslabs.trimixblender/<locale>/)
+//   F-Droid reads Google Play's, from the sources at the release's tag.
 // Never edit the written files: scripts/store-listings.test.js fails when they differ from the JSON.
 //   node scripts/store-listings.js           # writes them
 //   node scripts/store-listings.js --check   # fails if one differs
@@ -19,7 +18,7 @@ export const SOURCE = 'fastlane/listings.json';
  * (all three). */
 export const LIMITS = { title: 30, short_description: 80, full_description: 4000 };
 
-/** @typedef {{ app: string, play: string, apple: string, fdroid: string, title: string,
+/** @typedef {{ app: string, play: string, apple: string, title: string,
  *   short_description: string, full_description: string[] }} Listing */
 
 /** The problems of the listings: missing or too long texts, a description that does not start with
@@ -32,7 +31,7 @@ export function check(listings) {
 		const { app } = listing;
 		if (seen.has(app)) problems.push(`${app}: twice`);
 		seen.add(app);
-		for (const key of ['app', 'play', 'apple', 'fdroid', 'title', 'short_description']) {
+		for (const key of ['app', 'play', 'apple', 'title', 'short_description']) {
 			if (typeof listing[key] !== 'string' || !listing[key].trim()) problems.push(`${app}: no ${key}`);
 		}
 		if (!Array.isArray(listing.full_description)) {
@@ -53,12 +52,6 @@ export function check(listings) {
 	return problems;
 }
 
-/** The F-Droid summary: the short description without its final full stop (fdroid lint).
- * @param {string} short */
-export function summary(short) {
-	return short.replace(/[.。]$/u, '');
-}
-
 /** Every file to write, path → content (one line feed at the end).
  * @param {Listing[]} listings */
 export function files(listings) {
@@ -71,10 +64,7 @@ export function files(listings) {
 			[`android/${l.play}/short_description.txt`]: l.short_description,
 			[`android/${l.play}/full_description.txt`]: full,
 			[`ios/${l.apple}/name.txt`]: l.title,
-			[`ios/${l.apple}/description.txt`]: full,
-			[`fdroid/${l.fdroid}/name.txt`]: l.title,
-			[`fdroid/${l.fdroid}/summary.txt`]: summary(l.short_description),
-			[`fdroid/${l.fdroid}/description.txt`]: full
+			[`ios/${l.apple}/description.txt`]: full
 		};
 		for (const [path, text] of Object.entries(texts)) out[`fastlane/metadata/${path}`] = text + '\n';
 	}

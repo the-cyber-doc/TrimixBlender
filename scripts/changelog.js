@@ -1,9 +1,8 @@
 // The release notes, from their single source fastlane/changelog.json: one entry per version, newest
 // first, with its lines in each language of the listings (fastlane/listings.json, `app` codes).
 // `npm run listings` writes them where each store's tools read them (APPSTORE.md):
-//   Google Play: fastlane/metadata/android/<play>/changelogs/<versionCode>.txt (every version)
-//   F-Droid:     fastlane/metadata/fdroid/<fdroid>/changelogs/<versionCode>.txt (fdroiddata's names);
-//                F-Droid reads the Android ones from the tag
+//   Google Play: fastlane/metadata/android/<play>/changelogs/<versionCode>.txt (every version);
+//                F-Droid reads them too, from the sources at the release's tag
 //   App Store:   fastlane/metadata/ios/<apple>/release_notes.txt (the newest version only)
 // The GitHub release takes the English lines (ci-cd.yml, "Release notes"), the About page every
 // version in the app's language (src/lib/changelog.ts).
@@ -75,7 +74,6 @@ export function files(changelog, listings) {
 		for (const l of listings) {
 			const notes = text(entry[l.app]) + '\n';
 			out[`fastlane/metadata/android/${l.play}/changelogs/${code}.txt`] = notes;
-			out[`fastlane/metadata/fdroid/${l.fdroid}/changelogs/${code}.txt`] = notes;
 			if (i === 0) out[`fastlane/metadata/ios/${l.apple}/release_notes.txt`] = notes;
 		}
 	}

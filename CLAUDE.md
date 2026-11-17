@@ -17,7 +17,7 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend.
   the app (`{#key}` in `+layout.svelte`), so `t` needs no reactivity. Flags (`Flag.svelte`) are fixed in both themes.
 - Store listings: texts only in `fastlane/listings.json`, release notes only in `fastlane/changelog.json` (every
   language; also the GitHub release's "What's new" and the About page, `#lib/changelog.js`) → `npm run listings`
-  writes Play/App Store/F-Droid files in `fastlane/metadata/` (never edit those; tests check them); `npm version` fails
+  writes Play/App Store files in `fastlane/metadata/` (F-Droid reads Play's) (never edit those; tests check them); `npm version` fails
   without the new version's notes on top; screenshots: `npm run screenshots` (generated, committed); `npm run store`
   does both; see APPSTORE.md.
 - Node 26 is under fnm: `export PATH=~/.local/share/fnm/node-versions/v26.12.1/installation/bin:$PATH`.

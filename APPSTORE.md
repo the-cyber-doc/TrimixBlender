@@ -15,7 +15,6 @@ to the GitHub release (README, Signing).
 | `fastlane/metadata/android/<locale>/`             | Google Play listing: `title.txt`, `short_description.txt`, `full_description.txt` (from the JSON)                                        |
 | `fastlane/metadata/android/en-US/images/icon.png` | The 512 × 512 store icon                                                                                                                 |
 | `fastlane/metadata/ios/<locale>/`                 | App Store listing: `name.txt`, `description.txt` (from the JSON); `subtitle.txt`, `keywords.txt`, `promotional_text.txt`, URLs (by hand) |
-| `fastlane/metadata/fdroid/<locale>/`              | F-Droid listing: `name.txt`, `summary.txt`, `description.txt` (from the JSON)                                                            |
 | `fastlane/changelog.json`                         | **The release notes, in every language**, one entry per version: stores, GitHub release and About page (below)                           |
 | `fastlane/metadata/ios/*.txt`                     | App Store, all languages: copyright, categories (Sports, Utilities)                                                                      |
 | `PRIVACY.md`                                      | The privacy policy both stores require (its GitHub URL is in the listings)                                                               |
@@ -40,17 +39,17 @@ The listings exist in 8 languages, with each store's locale code:
 
 Each language has one title, one short description and one full description (an array of lines), shared by the three
 stores: edit them only in `fastlane/listings.json`, then `npm run listings` (`scripts/store-listings.js`) writes
-each store's files under its own names:
+each store's files under its own names (F-Droid reads Google Play's, from the sources at the tag):
 
-| JSON                | Google Play             | App Store         | F-Droid           |
-| ------------------- | ----------------------- | ----------------- | ----------------- |
-| `title`             | `title.txt`             | `name.txt`        | `name.txt`        |
-| `short_description` | `short_description.txt` | (none)            | `summary.txt`     |
-| `full_description`  | `full_description.txt`  | `description.txt` | `description.txt` |
+| JSON                | Google Play, F-Droid    | App Store         |
+| ------------------- | ----------------------- | ----------------- |
+| `title`             | `title.txt`             | `name.txt`        |
+| `short_description` | `short_description.txt` | (none)            |
+| `full_description`  | `full_description.txt`  | `description.txt` |
 
 The script checks the limits (title 30 characters, short description 80, full description 4000) and that each full
 description starts with the short description's first sentence, "No account, no ads, no tracker." in its language.
-F-Droid's summary drops the final full stop (`fdroid lint`). The App Store's subtitle (30 characters), keywords and
+The App Store's subtitle (30 characters), keywords and
 promotional text have no equivalent in the other stores: they stay in `fastlane/metadata/ios/<locale>/`, edited by
 hand. Never edit the written files: `npm run test:unit` fails when they differ from the JSON.
 
@@ -67,11 +66,11 @@ One entry per version, newest first, with its lines in each language of the list
 
 `npm run listings` also runs `scripts/changelog.js`, which writes:
 
-| Where       | File                                                                                       | Versions        |
-| ----------- | ------------------------------------------------------------------------------------------ | --------------- |
-| Google Play | `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`                          | every one       |
-| F-Droid     | the same (read at the tag); `fastlane/metadata/fdroid/<locale>/changelogs/` for fdroiddata | every one       |
-| App Store   | `fastlane/metadata/ios/<locale>/release_notes.txt`                                         | the newest only |
+| Where       | File                                                              | Versions        |
+| ----------- | ----------------------------------------------------------------- | --------------- |
+| Google Play | `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt` | every one       |
+| F-Droid     | the same, read from the sources at the tag                        | every one       |
+| App Store   | `fastlane/metadata/ios/<locale>/release_notes.txt`                | the newest only |
 
 versionCode of 1.2.3 is 10203 (`scripts/android-version.js`). The GitHub release starts with the English lines of its
 version ("What's new", ci-cd.yml), and the About page lists every version in the app's language
@@ -89,14 +88,13 @@ version.
 mix, Mix to do) for a nitrox and a trimix blend: 6 per device and language, 192 in all, a phone and the tablets for
 each store (`playwright.screenshots.config.ts`, `tests/screenshots/store.spec.ts`).
 
-| Device                            | Size (px)    | Written to                                                                            |
-| --------------------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| Android phone                     | 1320 × 2640  | `fastlane/metadata/android/<locale>/images/phoneScreenshots/`                         |
-| Android 7" tablet                 | 1200 × 1920  | `fastlane/metadata/android/<locale>/images/sevenInchScreenshots/`                     |
-| Android 10" tablet                | 2064 × 2752  | `fastlane/metadata/android/<locale>/images/tenInchScreenshots/` (links to the iPad's) |
-| iPhone 6.9" (App Store)           | 1320 × 2868  | `fastlane/screenshots/ios/<locale>/`                                                  |
-| iPad 13" (App Store)              | 2064 × 2752  | `fastlane/screenshots/ios/<locale>/`                                                  |
-| F-Droid: phone, 7" and 10" tablet | as Android's | `fastlane/metadata/fdroid/<locale>/images/`, the same folders (links to Android's)    |
+| Device                  | Size (px)   | Written to                                                                            |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------------- |
+| Android phone           | 1320 × 2640 | `fastlane/metadata/android/<locale>/images/phoneScreenshots/`                         |
+| Android 7" tablet       | 1200 × 1920 | `fastlane/metadata/android/<locale>/images/sevenInchScreenshots/`                     |
+| Android 10" tablet      | 2064 × 2752 | `fastlane/metadata/android/<locale>/images/tenInchScreenshots/` (links to the iPad's) |
+| iPhone 6.9" (App Store) | 1320 × 2868 | `fastlane/screenshots/ios/<locale>/`                                                  |
+| iPad 13" (App Store)    | 2064 × 2752 | `fastlane/screenshots/ios/<locale>/`                                                  |
 
 The Android phone screenshots show what the iPhone's show (same width), cut to 2:1: Google Play takes 2 to 8 phone
 screenshots per language, each side from 320 to 3840 px and the long side at most twice the short one, and the
@@ -294,12 +292,10 @@ F-Droid builds the app on its own servers from the sources of a release's tag, f
 | `fdroid/com.dolphinslabs.trimixblender.yml` | The recipe to submit to `fdroiddata` (`metadata/<app id>.yml` there)                                |
 | `tools/test-fdroid-build.sh`                | Lints and builds the recipe with F-Droid's tools in its build server image                          |
 | `scripts/android-version.js`                | `npm version`: the version in `android/app/build.gradle` (where F-Droid reads it) and in the recipe |
-| `fastlane/metadata/fdroid/<locale>/`        | The listing in F-Droid's names, `name.txt`, `summary.txt`, `description.txt`, and `images/`         |
 
-**The listing.** F-Droid reads it from the sources at the tag, in `fastlane/metadata/android/<locale>/` (the same
-texts as Google Play's). `fastlane/metadata/fdroid/<locale>/` holds the same texts and screenshots under the names of
-F-Droid's own metadata, for a listing kept in `fdroiddata` instead (`metadata/com.dolphinslabs.trimixblender/<locale>/`
-there; copy the screenshots with `cp -rL`, they are links). Both come from `fastlane/listings.json` (Texts, above).
+**The listing.** F-Droid reads it from the sources at the tag, in `fastlane/metadata/android/<locale>/`: Google
+Play's texts, screenshots and release notes (`changelogs/<versionCode>.txt`), from `fastlane/listings.json` and
+`fastlane/changelog.json` (above).
 
 **The recipe.** Node.js (the version of CI and the Docker build, its checksum checked) is installed by the `sudo`
 commands. F-Droid's source scanner runs next, on the sources as committed; then `npm ci` and `npm run build:native`
