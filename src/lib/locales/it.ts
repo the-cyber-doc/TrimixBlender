@@ -132,6 +132,7 @@ export const it: Dict = {
 		source: 'Codice sorgente su GitHub',
 		docker: 'Immagine Docker su Docker Hub',
 		license: 'Con licenza GNU GPL v3',
+		changes: 'Novità',
 		how: 'Come calcola',
 		howDalton: 'Pressioni parziali, MOD ed END: legge di Dalton, con 10 m di acqua di mare per bar (33 ft per atm).',
 		howMoles:

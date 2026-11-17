@@ -4,7 +4,9 @@ import { expect, test } from '@playwright/test';
 // of the page, wherever the app is published. (Not after another page: changing the hash while
 // the app is still starting is a race no user can run into.)
 
-test('the About page: the app, its version, links and copyright, then how it calculates', async ({ page }) => {
+test('the About page: the app, its version, links and copyright, what is new, then how it calculates', async ({
+	page
+}) => {
 	await page.goto('./#/about');
 	const card = page.locator('.about');
 	// Right below "About": the icon and the name.
@@ -21,9 +23,9 @@ test('the About page: the app, its version, links and copyright, then how it cal
 	await expect(page.getByTestId('copyright')).toHaveText(
 		/^©\s+\d{4}\s+the-cyber-doc\s+·\s+Licensed under the GNU GPL v3$/
 	);
-	// "How it calculates" and "References" last, in that order.
+	// "What's new", then "How it calculates" and "References" last, in that order.
 	const headings = await card.locator('h2').allTextContents();
-	expect(headings).toEqual(['How it calculates', 'References']);
+	expect(headings).toEqual(["What's new", 'How it calculates', 'References']);
 	const copyright = (await page.getByTestId('copyright').boundingBox())!;
 	const how = (await page.getByRole('heading', { name: 'How it calculates' }).boundingBox())!;
 	expect(how.y).toBeGreaterThan(copyright.y);
@@ -37,4 +39,11 @@ test('the About page cites the gas density sources', async ({ page }) => {
 	await expect(page.getByText('Warkander, D.E.')).toBeVisible();
 	await expect(page.getByText('Doolette, D.J. & Mitchell, S.J. (2011)')).toBeVisible();
 	await expect(page.getByText('Standard atomic weights of the elements 2021')).toBeVisible();
+});
+
+test("the About page lists every version's notes in the app's language", async ({ page }) => {
+	await page.goto('./#/about');
+	const changes = page.getByTestId('changes');
+	await expect(changes.locator('h3').last()).toHaveText('1.0.0');
+	await expect(changes.locator('ul').last()).toHaveText('Initial release.');
 });

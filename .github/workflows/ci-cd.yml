@@ -491,6 +491,13 @@ jobs:
       contents: write # create the release and upload its files
 
     steps:
+      # Only the release notes' source (scripts/changelog.js), out of the way of the downloads.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: sources
+          sparse-checkout: fastlane/changelog.json
+          sparse-checkout-cone-mode: false
+
       - name: Download web build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -539,7 +546,14 @@ jobs:
           VERSION: ${{ needs.merge-and-push.outputs.version }}
           DIGEST: ${{ needs.merge-and-push.outputs.digest }}
         run: |
-          cat > notes.md <<NOTES
+          # This version's notes, in English (npm version makes sure they exist).
+          changes=$(jq -r --arg v "$VERSION" '.[] | select(.version == $v) | .en[] | "- " + .' \
+            sources/fastlane/changelog.json)
+          if [ -z "$changes" ]; then
+            echo "::error::No release notes for $VERSION in fastlane/changelog.json"
+            exit 1
+          fi
+          { printf '## What'"'"'s new\n\n%s\n\n' "$changes"; cat; } > notes.md <<NOTES
           ## Docker image (linux/amd64, linux/arm64)
 
           - Docker Hub: https://hub.docker.com/r/${IMAGE}/tags?name=${VERSION}

@@ -129,6 +129,7 @@ export const ja: Dict = {
 		source: 'GitHubのソースコード',
 		docker: 'Docker HubのDockerイメージ',
 		license: 'GNU GPL v3ライセンス',
+		changes: '更新履歴',
 		how: '計算方法',
 		howDalton: '分圧・MOD・END：ドルトンの法則。1 barあたり海水10 m（1 atmあたり33 ft）。',
 		howMoles:

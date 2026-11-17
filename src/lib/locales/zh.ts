@@ -123,6 +123,7 @@ export const zh: Dict = {
 		source: 'GitHub 上的源代码',
 		docker: 'Docker Hub 上的 Docker 镜像',
 		license: '采用 GNU GPL v3 许可',
+		changes: '更新内容',
 		how: '计算方法',
 		howDalton: '分压、MOD 和 END：道尔顿定律，每 bar 10 m 海水（每 atm 33 ft）。',
 		howMoles:

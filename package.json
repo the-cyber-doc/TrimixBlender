@@ -19,12 +19,12 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write . && eslint --fix .",
 		"icons": "node scripts/icons.js",
-		"listings": "node scripts/store-listings.js",
+		"listings": "node scripts/store-listings.js && node scripts/changelog.js",
 		"screenshots": "playwright test -c playwright.screenshots.config.ts",
 		"store": "npm run listings && npm run screenshots",
 		"nist:fetch": "sh scripts/fetch-nist.sh",
 		"nist:fit": "node scripts/fit-compressibility.js",
-		"version": "node scripts/android-version.js && git add android/app/build.gradle fdroid/com.dolphinslabs.trimixblender.yml",
+		"version": "node scripts/android-version.js && node scripts/changelog.js --release && git add android/app/build.gradle fdroid/com.dolphinslabs.trimixblender.yml fastlane/metadata/*/*/changelogs fastlane/metadata/ios/*/release_notes.txt",
 		"build:native": "APP_TARGET=native vite build && APP_TARGET=native node scripts/relative-index.js && cap sync"
 	},
 	"devDependencies": {

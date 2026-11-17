@@ -16,10 +16,11 @@ to the GitHub release (README, Signing).
 | `fastlane/metadata/android/en-US/images/icon.png` | The 512 × 512 store icon                                                                                                                 |
 | `fastlane/metadata/ios/<locale>/`                 | App Store listing: `name.txt`, `description.txt` (from the JSON); `subtitle.txt`, `keywords.txt`, `promotional_text.txt`, URLs (by hand) |
 | `fastlane/metadata/fdroid/<locale>/`              | F-Droid listing: `name.txt`, `summary.txt`, `description.txt` (from the JSON)                                                            |
+| `fastlane/changelog.json`                         | **The release notes, in every language**, one entry per version: stores, GitHub release and About page (below)                           |
 | `fastlane/metadata/ios/*.txt`                     | App Store, all languages: copyright, categories (Sports, Utilities)                                                                      |
 | `PRIVACY.md`                                      | The privacy policy both stores require (its GitHub URL is in the listings)                                                               |
-| `npm run listings`                                | Writes the listings' text files from the JSON (below)                                                                                    |
-| `npm run screenshots`                             | Generates the screenshots (not committed, see below)                                                                                     |
+| `npm run listings`                                | Writes the listings' and release notes' text files from the JSONs (below)                                                                |
+| `npm run screenshots`                             | Generates the screenshots (committed, see below)                                                                                         |
 | `npm run store`                                   | Both                                                                                                                                     |
 
 The listings exist in 8 languages, with each store's locale code:
@@ -56,6 +57,32 @@ hand. Never edit the written files: `npm run test:unit` fails when they differ f
 **Have every translation checked by a diver who is a native speaker** before publishing, the app's warnings first
 (`src/lib/locales/*.ts`), then the listings. They were drafted by an AI.
 
+### Release notes: one source, `fastlane/changelog.json`
+
+One entry per version, newest first, with its lines in each language of the listings:
+
+```json
+[{ "version": "1.1.0", "en": ["Gas density shown at each step."], "fr": ["…"], "de": ["…"] }]
+```
+
+`npm run listings` also runs `scripts/changelog.js`, which writes:
+
+| Where       | File                                                                                       | Versions        |
+| ----------- | ------------------------------------------------------------------------------------------ | --------------- |
+| Google Play | `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`                          | every one       |
+| F-Droid     | the same (read at the tag); `fastlane/metadata/fdroid/<locale>/changelogs/` for fdroiddata | every one       |
+| App Store   | `fastlane/metadata/ios/<locale>/release_notes.txt`                                         | the newest only |
+
+versionCode of 1.2.3 is 10203 (`scripts/android-version.js`). The GitHub release starts with the English lines of its
+version ("What's new", ci-cd.yml), and the About page lists every version in the app's language
+(`src/lib/changelog.ts`). The script checks each version (x.y.z, newer than the one below it), every language and
+Google Play's limit of 500 characters per version and language; `npm run test:unit` fails when the written files differ
+from the JSON.
+
+**To release**: add the version's entry at the top of `fastlane/changelog.json`, run `npm run listings`, commit, then
+`npm version x.y.z`, which fails if the newest entry is not that version, and commits the written files with the
+version.
+
 ### Screenshots
 
 `npm run screenshots` builds the app and takes, for each language, each area of the app (Available gases, Target
@@ -76,7 +103,7 @@ screenshots per language, each side from 320 to 3840 px and the long side at mos
 iPhone's are 2.17:1. The 7" tablet is a 600 × 960 dp screen; the 10" tablet is the iPad. A link is a relative symlink,
 not a copy: fastlane follows them, and `cp -rL` copies the files they point to. The App Store requires the 6.9" iPhone
 set and, because the app also runs on iPad, the 13" iPad set; it takes up to 10 per device and language. They are
-generated, so they are in `.gitignore` (about 35 MB); run the command again after any visible change, or `npm run
+generated but committed (about 35 MB), so that F-Droid and the other platforms' builds find them at the tag; run the command again after any visible change, or `npm run
 store` after a change of the texts as well (README, Store listings and screenshots).
 
 ### Still to make by hand
@@ -84,8 +111,6 @@ store` after a change of the texts as well (README, Store listings and screensho
 - **Google Play feature graphic** (required): 1024 × 500 PNG or JPEG, in
   `fastlane/metadata/android/<locale>/images/featureGraphic.png` (one per language if it holds text, else `en-US`
   only).
-- **Release notes** for each update: `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt` (versionCode
-  of 1.2.3 is 10203), and `fastlane/metadata/ios/<locale>/release_notes.txt`. Not needed for the first version.
 
 ## 1. Developer accounts
 
@@ -295,9 +320,9 @@ and `tools/check-android-apk.sh` on the APK. The APK and the logs land in `fdroi
 1. Release a version with `npm version` (the recipe's first build must be a tag whose `build.gradle` holds its version:
    v0.0.4 does not). `npm version` also sets the recipe's build (`versionName`, `versionCode`, `commit: v<version>`)
    and `CurrentVersion` / `CurrentVersionCode`, in the tagged commit: the recipe is then ready to submit as it is.
-2. Commit the screenshots (`fastlane/metadata/android/<locale>/images/*Screenshots/`, now in `.gitignore`) as files,
-   not links (`cp -rL`: the 10" ones link to the iPad's): F-Droid shows only what is in the repository at the tag.
-   Optionally `changelogs/<versionCode>.txt` next to them.
+2. Check that the screenshots (`fastlane/metadata/android/<locale>/images/*Screenshots/`) are committed, as files, not
+   links (`cp -rL`: the 10" ones link to the iPad's): F-Droid shows only what is in the repository at the tag. The
+   release notes (`changelogs/<versionCode>.txt`) are next to them.
 3. Fork <https://gitlab.com/fdroid/fdroiddata>, copy the recipe to `metadata/com.dolphinslabs.trimixblender.yml`, and
    open a merge request with the "App inclusion" template. Its CI runs the same jobs as the script; a reviewer may ask
    for changes. Expect a few weeks.

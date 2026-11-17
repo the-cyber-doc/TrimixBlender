@@ -131,6 +131,7 @@ export const nl: Dict = {
 		source: 'Broncode op GitHub',
 		docker: 'Docker-image op Docker Hub',
 		license: 'Gelicentieerd onder de GNU GPL v3',
+		changes: 'Wat is er nieuw',
 		how: 'Hoe er gerekend wordt',
 		howDalton: 'Partiële drukken, MOD en END: wet van Dalton, met 10 m zeewater per bar (33 ft per atm).',
 		howMoles:

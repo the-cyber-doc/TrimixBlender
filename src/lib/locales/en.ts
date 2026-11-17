@@ -131,6 +131,7 @@ export const en = {
 		source: 'Source code on GitHub',
 		docker: 'Docker image on Docker Hub',
 		license: 'Licensed under the GNU GPL v3',
+		changes: "What's new",
 		how: 'How it calculates',
 		howDalton: "Partial pressures, MOD and END: Dalton's law, with 10 m of seawater per bar (33 ft per atm).",
 		howMoles:

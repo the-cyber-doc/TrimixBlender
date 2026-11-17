@@ -11,6 +11,7 @@
 		versionLabel
 	} from '#lib/about.js';
 	import { asset } from '#lib/base.js';
+	import { releases } from '#lib/changelog.js';
 	import { Z_MAX_ERROR } from '#lib/compressibility-coefficients.js';
 	import { fill, locale, split, t } from '#lib/i18n.js';
 	import { REFERENCES } from '#lib/references.js';
@@ -43,6 +44,16 @@
 			{COPYRIGHT_HOLDER} ·
 			<a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">{t.about.license}</a>
 		</p>
+
+		<h2>{t.about.changes}</h2>
+		<div class="changes" data-testid="changes">
+			{#each releases(locale()) as release (release.version)}
+				<h3>{release.version}</h3>
+				<ul>
+					{#each release.lines as line, i (i)}<li>{line}</li>{/each}
+				</ul>
+			{/each}
+		</div>
 
 		<h2>{t.about.how}</h2>
 		<ul>
@@ -106,6 +117,19 @@
 
 	h2 {
 		margin-top: var(--space-4);
+	}
+
+	.changes {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.changes h3 {
+		margin: var(--space-2) 0 0;
+	}
+
+	.changes h3:first-child {
+		margin-top: 0;
 	}
 
 	.references {

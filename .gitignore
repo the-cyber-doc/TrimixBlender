@@ -10,11 +10,5 @@ vite.config.ts.timestamp-*
 /test-results
 /playwright-report
 release.jks
-# Store screenshots: generated (npm run screenshots, APPSTORE.md)
-/fastlane/metadata/android/*/images/phoneScreenshots/
-/fastlane/metadata/android/*/images/sevenInchScreenshots/
-/fastlane/metadata/android/*/images/tenInchScreenshots/
-/fastlane/metadata/fdroid/*/images/
-/fastlane/screenshots/
 # tools/test-fdroid-build.sh
 /fdroid-build

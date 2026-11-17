@@ -6,6 +6,8 @@
 !tsconfig.json
 !src/
 !static/
+# The release notes, on the About page (src/lib/changelog.ts)
+!fastlane/changelog.json
 !scripts/nist/
 !scripts/relative-index.js
 !nginx.conf
