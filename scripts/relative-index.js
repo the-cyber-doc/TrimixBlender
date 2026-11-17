@@ -11,14 +11,34 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
+import { parse } from 'parse5';
+
+/** The text of each inline script of the page, as written (what a CSP hash covers), found by an
+ * HTML parser as a browser would: any case of <script>, with attributes, `</script >`…
+ * @param {string} html */
+export function inlineScripts(html) {
+	/** @type {string[]} */
+	const scripts = [];
+	/** @param {any} node a parse5 node */
+	const walk = (node) => {
+		const location = node.sourceCodeLocation;
+		if (node.nodeName === 'script' && !node.attrs.some((/** @type {any} */ a) => a.name === 'src')) {
+			// No end tag (a page cut short): the script runs to the end of the page.
+			scripts.push(html.slice(location.startTag.endOffset, location.endTag?.startOffset ?? html.length));
+		}
+		for (const child of node.childNodes ?? []) walk(child);
+	};
+	walk(parse(html, { sourceCodeLocationInfo: true }));
+	return scripts;
+}
 
 /** The page with relative paths and its CSP's script hashes updated.
  * @param {string} html */
 export function makeRelative(html) {
 	const relative = html.replaceAll('"/_app/', '"./_app/');
 	const hash = (/** @type {string} */ script) => `'sha256-${createHash('sha256').update(script).digest('base64')}'`;
-	const before = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => hash(m[1]));
-	const after = [...relative.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => hash(m[1]));
+	const before = inlineScripts(html).map(hash);
+	const after = inlineScripts(relative).map(hash);
 	let out = relative;
 	before.forEach((old, i) => (out = out.replace(old, after[i])));
 	if (/(href|src)="\/(?!\/)/.test(out) || out.includes('"/_app/')) {
