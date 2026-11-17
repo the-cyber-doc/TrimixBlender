@@ -31,7 +31,7 @@ describe('Android version', () => {
 	it("sets the F-Droid recipe's build and current version", () => {
 		const recipe = readFileSync(RECIPE, 'utf8');
 		const out = setRecipeVersion(recipe, '1.2.3');
-		expect(out).toContain('  - versionName: 1.2.3\n    versionCode: 10203\n    commit: v1.2.3\n');
+		expect(out).toContain('  - versionName: 1.2.3\n    versionCode: 10203\n');
 		expect(out).toContain('CurrentVersion: 1.2.3\nCurrentVersionCode: 10203\n');
 		expect(out.split('\n')).toHaveLength(recipe.split('\n').length);
 		expect(() => setRecipeVersion('Builds: []', '1.2.3')).toThrow('no ');

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LIMIT, check, files, load, releaseProblem, stale } from './changelog.js';
 
@@ -66,5 +67,11 @@ describe('changelog', () => {
 	it('has the repository files as in fastlane/changelog.json', () => {
 		expect(load().changelog.length).toBeGreaterThan(0);
 		expect(stale()).toEqual([]);
+	});
+
+	it('has notes for the version npm version set (package.json); only newer ones, being written, above it', () => {
+		const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+		const versions = load().changelog.map((e) => e.version);
+		expect(versions).toContain(version);
 	});
 });

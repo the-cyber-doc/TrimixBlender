@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 // The About page, opened directly by its link (./#/about), as from a bookmark: the first load
 // of the page, wherever the app is published. (Not after another page: changing the hash while
@@ -42,8 +43,9 @@ test('the About page cites the gas density sources', async ({ page }) => {
 });
 
 test("the About page lists every version's notes in the app's language", async ({ page }) => {
+	const changelog: { version: string; en: string[] }[] = JSON.parse(readFileSync('fastlane/changelog.json', 'utf8'));
 	await page.goto('./#/about');
 	const changes = page.getByTestId('changes');
-	await expect(changes.locator('h3').last()).toHaveText('1.0.0');
-	await expect(changes.locator('ul').last()).toHaveText('Initial release.');
+	await expect(changes.locator('h3')).toHaveText(changelog.map((e) => e.version));
+	await expect(changes.locator('ul').first().locator('li')).toHaveText(changelog[0].en);
 });

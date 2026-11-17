@@ -12,3 +12,4 @@ vite.config.ts.timestamp-*
 release.jks
 # tools/test-fdroid-build.sh
 /fdroid-build
+/fastlane/metadata/fdroid

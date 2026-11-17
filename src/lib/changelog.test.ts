@@ -16,7 +16,7 @@ describe('changelog', () => {
 	});
 
 	it("has every version in each of the app's languages", () => {
-		expect(releases('en').at(-1)).toEqual({ version: '1.0.0', lines: ['Initial release.'] });
+		expect(releases('en').map((r) => r.version)).toEqual(changelog.map((e) => e.version));
 		for (const entry of changelog) {
 			expect(Object.keys(entry).sort(), entry.version).toEqual(['version', ...LOCALE_CODES].sort());
 		}
