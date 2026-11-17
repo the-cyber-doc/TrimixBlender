@@ -18,7 +18,7 @@ Binaries:
 Builds:
   - versionName: 0.0.7
     versionCode: 7
-    commit: v0.0.7
+    commit: # Use full hash of the release commit
     subdir: android/app
     sudo:
       - curl -Lo /tmp/node.tar.gz https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.gz
