@@ -19,6 +19,12 @@ updates:
       npm-minor:
         update-types: [minor, patch]
 
+  # fastlane (Gemfile.lock), which uploads the iOS app and its listing.
+  - package-ecosystem: bundler
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+
   - package-ecosystem: docker
     directory: /
     registries: [dhi]

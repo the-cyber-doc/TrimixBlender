@@ -234,42 +234,43 @@ the languages in Xcode (Project > Info > Localizations).
 
 ### Build and review
 
-1. Upload the IPA from the GitHub release (or the run's `ios-app` artifact), on a Mac:
-   - **Transporter** (free, Mac App Store): drag the `.ipa`, Deliver.
-   - Or `xcrun altool --upload-app -f trimix-blender-1.2.3.ipa -t ios --apiKey <KEY_ID> --apiIssuer <ISSUER_ID>`
-     (the CI's API key, in `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8`).
+1. **A release uploads it** (`npm version x.y.z && git push --follow-tags`): CI's "iOS app" job signs the IPA, then
+   fastlane uploads it to App Store Connect and the version's listing in every language (below). By hand, from any
+   computer: `bundle exec fastlane ios upload ipa:trimix-blender-1.2.3.ipa`.
 2. The build appears in **TestFlight** after processing (minutes). Export compliance is already answered in
    `Info.plist` (no encryption besides the system's). Test it yourself (internal testing needs no review).
-3. On the version's page, select the build, fill **App Review Information** (contact; no sign-in needed) and submit.
-   Review usually takes one to two days.
+3. On the version's page, check the listing, select the build, fill **App Review Information** (contact; no sign-in
+   needed) and submit. Review usually takes one to two days.
 
 **Review risk: guideline 4.2, minimum functionality.** Apple rejects apps that are only a website in a wrapper. In the
 review notes, say what the app is: a self-contained calculator that works fully offline, its whole code inside the
 app, no web content loaded. Mention the real-gas model and the drawings. If rejected, answer in Resolution Center
 with the same points before changing anything.
 
-### Upload with fastlane (optional)
+### Upload with fastlane
 
-`deliver` uploads every language's listing and screenshots through the App Store Connect API (it works on Linux too;
-the binary itself is uploaded from a Mac, above). Write the API key as JSON once, outside the repository:
+`fastlane/Fastfile` has two lanes, with the App Store Connect API key of CI's signing (README, Signing), read from the
+same three variables as the GitHub secrets:
 
-```json
-{
-	"key_id": "<KEY_ID>",
-	"issuer_id": "<ISSUER_ID>",
-	"key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-}
-```
+| Lane                             | Uploads                                                                                                                                                                                                  |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fastlane ios upload ipa:<file>` | The signed IPA, to TestFlight                                                                                                                                                                            |
+| `fastlane ios metadata`          | For package.json's version (created if missing): every language's texts and release notes (`fastlane/metadata/ios/`), categories, copyright, and the screenshots (`fastlane/screenshots/ios/`, replaced) |
+
+CI runs both on a release's tag, after signing (not on a manual signed run). Neither submits for review. fastlane
+is pinned in `Gemfile.lock` (Dependabot updates it); `deliver` tells the iPhone and iPad screenshots apart by their
+size.
+
+By hand (Ruby 3.2 or later: `sudo dnf install ruby ruby-devel`, `brew install ruby`), for example after changing the
+listing or the screenshots between releases:
 
 ```sh
-npm run screenshots   # the iPhone and iPad screenshots, into fastlane/screenshots/ios/
-fastlane deliver --api_key_path ~/keys/asc.json --app_identifier com.dolphinslabs.trimixblender \
-  --metadata_path fastlane/metadata/ios --screenshots_path fastlane/screenshots/ios \
-  --overwrite_screenshots --skip_binary_upload --force
+npm run store   # the texts and screenshots
+bundle install
+export APP_STORE_CONNECT_KEY_ID=<KEY_ID> APP_STORE_CONNECT_ISSUER_ID=<ISSUER_ID> \
+  APP_STORE_CONNECT_API_KEY_BASE64="$(base64 -w0 ~/keys/AuthKey_<KEY_ID>.p8)"
+bundle exec fastlane ios metadata
 ```
-
-`deliver` tells the iPhone and iPad screenshots apart by their size. Add `--submit_for_review` once a build is
-selected, or submit from the website.
 
 ## 4. Other places
 

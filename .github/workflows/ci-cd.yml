@@ -342,6 +342,28 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      # A release only (not a manual signed run, version 0.0.0): the IPA to App Store Connect
+      # (TestFlight once processed) and the version's listing in every language, with fastlane
+      # (fastlane/Fastfile, Gemfile.lock). Nothing is submitted for review: that stays a click in App
+      # Store Connect (APPSTORE.md).
+      - name: Set up Ruby (fastlane)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
+        with:
+          bundler-cache: true # .ruby-version, the gems of Gemfile.lock
+
+      - name: Upload to App Store Connect
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+          FASTLANE_OPT_OUT_USAGE: '1' # no usage statistics sent to fastlane
+        run: |
+          bundle exec fastlane ios upload ipa:ios-app/trimix-blender.ipa
+          bundle exec fastlane ios metadata
+
   build:
     needs: test
     name: Image (${{ matrix.platform }})

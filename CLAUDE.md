@@ -39,5 +39,6 @@ Static SvelteKit 3 / Svelte 5 (runes) PWA, no backend.
   (`scripts/android-version.js`, which also sets the F-Droid recipe's build) for F-Droid's update checker; never
   computed there from the tag.
 - CI/CD: `.github/workflows/ci-cd.yml`. A `v*.*.*` tag publishes the amd64+arm64 image and the GitHub release (web build archives,
-  signed APK + AAB, image links, and the IPA if the optional iOS job succeeded); a release fails without the Android
-  signing secrets (README, Signing).
+  signed APK + AAB, image links, and the IPA if the optional iOS job succeeded, which also uploads it and the listing
+  to App Store Connect: `fastlane/Fastfile`, `Gemfile.lock`); a release fails without the Android signing secrets
+  (README, Signing).

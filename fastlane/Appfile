@@ -1,0 +1,3 @@
+# The app's identifier in both stores (the same on Android and iOS; it can never change).
+app_identifier 'com.dolphinslabs.trimixblender'
+package_name 'com.dolphinslabs.trimixblender'

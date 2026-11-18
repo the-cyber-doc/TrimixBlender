@@ -165,8 +165,8 @@ Run workflow (choose the branch, "sign" checked), or `gh workflow run ci-cd.yml 
 signs both apps as a release does, version 0.0.0, and fails on a missing or wrong secret; nothing is published. The
 signed `android-app` (APK, AAB) and `ios-app` (IPA) are the run's artifacts, kept 7 days: `gh run download <run id>`.
 
-The release's `.ipa` is uploaded to App Store Connect (Transporter, or `xcrun altool --upload-app`) for TestFlight and
-the App Store review. The app ID is the same on both platforms; it cannot change once the app is in a store.
+A release's `.ipa` is uploaded to App Store Connect by the same job, with fastlane and the same API key, for TestFlight
+and the App Store review, with the version's listing (APPSTORE.md, Upload with fastlane). The app ID is the same on both platforms; it cannot change once the app is in a store.
 
 ## Docker
 
