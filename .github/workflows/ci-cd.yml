@@ -327,10 +327,12 @@ jobs:
           rm -f "$key"
           mkdir -p ios-app
           cp "$RUNNER_TEMP"/export/*.ipa ios-app/trimix-blender.ipa
-          # The IPA's app: signed for distribution (not development), the signature valid.
+          # The IPA's app: signed for distribution (not development), the signature valid. Checked
+          # against an Apple-issued certificate (-R), not the app's designated requirement: that one
+          # names the certificate Apple re-signs App Store apps with, so it fails until Apple has.
           unzip -q ios-app/trimix-blender.ipa -d "$RUNNER_TEMP/ipa"
           app="$RUNNER_TEMP/ipa/Payload/App.app"
-          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign --verify --deep --strict --verbose=2 -R='anchor apple generic' "$app"
           codesign -dvv "$app" 2>&1 | grep -q '^Authority=Apple Distribution' ||
             { echo "::error::The IPA is not signed with an Apple Distribution certificate"; exit 1; }
 
