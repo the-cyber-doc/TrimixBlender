@@ -327,12 +327,20 @@ jobs:
           rm -f "$key"
           mkdir -p ios-app
           cp "$RUNNER_TEMP"/export/*.ipa ios-app/trimix-blender.ipa
-          # The IPA's app: signed for distribution (not development), the signature valid. Checked
-          # against an Apple-issued certificate (-R), not the app's designated requirement: that one
-          # names the certificate Apple re-signs App Store apps with, so it fails until Apple has.
+          # The IPA's app: signed for distribution (not development), the signature valid. The app's
+          # designated requirement names the certificate Apple re-signs App Store apps with, so it
+          # cannot be met before Apple has: codesign then exits with 3 (a requirement not met), not 1
+          # (an invalid signature). Required instead: valid on disk, and an Apple-issued certificate.
           unzip -q ios-app/trimix-blender.ipa -d "$RUNNER_TEMP/ipa"
           app="$RUNNER_TEMP/ipa/Payload/App.app"
-          codesign --verify --deep --strict --verbose=2 -R='anchor apple generic' "$app"
+          status=0
+          out=$(codesign --verify --deep --strict --verbose=2 -R='anchor apple generic' "$app" 2>&1) || status=$?
+          echo "$out"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 3 ] ||
+            ! grep -q ': valid on disk$' <<<"$out" ||
+            ! grep -q ': explicit requirement satisfied$' <<<"$out"; then
+            echo "::error::The IPA's signature is not valid"; exit 1
+          fi
           codesign -dvv "$app" 2>&1 | grep -q '^Authority=Apple Distribution' ||
             { echo "::error::The IPA is not signed with an Apple Distribution certificate"; exit 1; }
 
