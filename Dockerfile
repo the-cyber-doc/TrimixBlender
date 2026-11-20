@@ -20,7 +20,7 @@ RUN npx vitest run \
     && APP_VERSION="${APP_VERSION}" APP_COMMIT="${APP_COMMIT}" npm run build \
     && chmod -R u=rwX,go=rX build
 
-FROM dhi.io/nginx:1.31.8-alpine3.24 AS runtime
+FROM dhi.io/nginx:1.31.9-alpine3.24 AS runtime
 
 # nginx's configuration, checked by the runtime's own nginx (nginx -t): a broken
 # configuration fails the build, not the start.
